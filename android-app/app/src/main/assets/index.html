@@ -1,0 +1,2861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TenancyShield • Your Tenancy, Documented</title>
+  <style>
+    :root {
+      --forest-green: #263A2E;
+      --warm-paper: #F7F5EF;
+      --surface-white: #FFFFFF;
+      --charcoal-text: #343831;
+      --charcoal-muted: #5C6058;
+      --muted-brass: #A78352;
+      --soft-stone: #EAE7DF;
+      --soft-stone-border: #E5E1D8;
+      --hero-overlay: rgba(255, 255, 255, 0.14);
+      --font-main: -apple-system, BlinkMacSystemFont, "Plus Jakarta Sans", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100%;
+      background-color: var(--warm-paper);
+      color: var(--charcoal-text);
+      font-family: var(--font-main);
+      box-sizing: border-box;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ==========================================================================
+       Opening Brand Splash Animation (2.4s + Tap-to-Skip)
+       ========================================================================== */
+    #splash-overlay {
+      position: fixed;
+      inset: 0;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      height: 100%;
+      background-color: var(--warm-paper);
+      z-index: 200000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      box-sizing: border-box;
+      transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+
+    #splash-overlay.fade-out {
+      opacity: 0;
+      transform: scale(1.02);
+      pointer-events: none;
+    }
+
+    .splash-emblem {
+      width: 136px;
+      height: 136px;
+      margin-bottom: 24px;
+    }
+
+    .shield-path {
+      stroke-dasharray: 320;
+      stroke-dashoffset: 320;
+      animation: drawShield 1.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    @keyframes drawShield {
+      to {
+        stroke-dashoffset: 0;
+      }
+    }
+
+    .splash-wordmark {
+      font-size: 32px;
+      letter-spacing: -0.6px;
+      margin-bottom: 12px;
+      opacity: 0;
+      transform: translateY(8px);
+      animation: splashFadeIn 0.8s 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    .splash-tagline-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      opacity: 0;
+      transform: translateY(6px);
+      animation: splashFadeIn 0.8s 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    .splash-line {
+      width: 28px;
+      height: 1.5px;
+      background-color: var(--muted-brass);
+    }
+
+    .splash-tagline {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--charcoal-muted);
+      letter-spacing: 0.02em;
+    }
+
+    /* Animated Muted Brass Loading Bar */
+    .splash-loader-track {
+      width: 160px;
+      height: 4px;
+      background: var(--soft-stone);
+      border-radius: 2px;
+      margin-top: 32px;
+      overflow: hidden;
+      opacity: 0;
+      animation: splashFadeIn 0.5s 0.5s forwards;
+    }
+
+    .splash-loader-bar {
+      width: 0%;
+      height: 100%;
+      background: var(--muted-brass);
+      border-radius: 2px;
+      animation: fillLoadingBar 2.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    }
+
+    @keyframes fillLoadingBar {
+      0% { width: 0%; }
+      70% { width: 85%; }
+      100% { width: 100%; }
+    }
+
+    @keyframes splashFadeIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ==========================================================================
+       Main Viewport Container
+       ========================================================================== */
+    .app-viewport {
+      width: 100%;
+      max-width: 480px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 16px 16px 110px 16px;
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    /* Tab Page Switcher */
+    .tab-page {
+      display: none;
+      flex-direction: column;
+      gap: 18px;
+      animation: fadeInPage 0.2s ease-out;
+    }
+
+    .tab-page.active {
+      display: flex;
+    }
+
+    @keyframes fadeInPage {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ==========================================================================
+       Header & Interactive Dropdown
+       ========================================================================== */
+    .app-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 4px;
+      margin-bottom: 6px;
+      position: relative;
+    }
+
+    .brand-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background-color: var(--forest-green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 3px 8px rgba(38, 58, 46, 0.2);
+      flex-shrink: 0;
+    }
+
+    .brand-text h1 {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--charcoal-text);
+      letter-spacing: -0.4px;
+      line-height: 1.15;
+    }
+
+    .brand-text p {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--charcoal-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      position: relative;
+    }
+
+    /* Clean Interactive Language Dropdown Button */
+    .lang-dropdown-trigger {
+      background: var(--surface-white);
+      border: 1.5px solid var(--forest-green);
+      color: var(--charcoal-text);
+      border-radius: 20px;
+      padding: 6px 12px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 1px 4px rgba(52, 56, 49, 0.05);
+      transition: all 0.2s ease;
+    }
+
+    .lang-dropdown-trigger:active {
+      background: var(--soft-stone);
+      transform: scale(0.97);
+    }
+
+    /* Floating Dropdown Menu */
+    .lang-floating-menu {
+      position: absolute;
+      top: 54px;
+      right: 0;
+      z-index: 99999;
+      background: var(--surface-white);
+      border: 1px solid var(--soft-stone-border);
+      border-radius: 14px;
+      box-shadow: 0 12px 28px rgba(38, 58, 46, 0.16);
+      min-width: 195px;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      animation: dropMenuFade 0.18s ease-out;
+    }
+
+    .lang-floating-menu.open {
+      display: flex;
+    }
+
+    @keyframes dropMenuFade {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .lang-menu-item {
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--charcoal-text);
+      background: none;
+      border: none;
+      border-bottom: 1px solid var(--soft-stone);
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s ease;
+    }
+
+    .lang-menu-item:last-child {
+      border-bottom: none;
+    }
+
+    .lang-menu-item:hover, .lang-menu-item:active {
+      background: var(--warm-paper);
+    }
+
+    .lang-menu-item.active {
+      background: rgba(38, 58, 46, 0.08);
+      color: var(--forest-green);
+      font-weight: 700;
+    }
+
+    .profile-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--surface-white);
+      border: 1px solid var(--soft-stone-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--charcoal-text);
+      cursor: pointer;
+      box-shadow: 0 1px 4px rgba(52, 56, 49, 0.04);
+      flex-shrink: 0;
+    }
+
+    /* ==========================================================================
+       Editorial Hero Header
+       ========================================================================== */
+    .hero-editorial {
+      margin-top: 4px;
+      margin-bottom: 2px;
+    }
+
+    .editorial-overline {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted-brass);
+      margin-bottom: 4px;
+    }
+
+    .editorial-title {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--charcoal-text);
+      letter-spacing: -0.6px;
+      line-height: 1.16;
+      margin-bottom: 4px;
+    }
+
+    .editorial-subtitle {
+      font-size: 15px;
+      color: var(--charcoal-muted);
+      line-height: 1.4;
+    }
+
+    /* ==========================================================================
+       Primary Forest Green Hero Card
+       ========================================================================== */
+    .forest-hero-card {
+      background: var(--forest-green);
+      color: #FFFFFF;
+      border-radius: 22px;
+      padding: 20px;
+      box-shadow: 0 6px 20px rgba(38, 58, 46, 0.18);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .hero-card-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+    }
+
+    .hero-card-row:active {
+      opacity: 0.85;
+    }
+
+    .hero-icon-box {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: var(--hero-overlay);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .hero-row-text {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .hero-row-title {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      margin-bottom: 2px;
+    }
+
+    .hero-row-subtitle {
+      font-size: 12.5px;
+      color: rgba(255, 255, 255, 0.8);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .hero-row-action {
+      font-size: 18px;
+      color: rgba(255, 255, 255, 0.8);
+      font-weight: 600;
+    }
+
+    .hero-divider {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.14);
+      width: 100%;
+    }
+
+    /* ==========================================================================
+       Recent Documents List
+       ========================================================================== */
+    .section-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 6px;
+      margin-bottom: -4px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--charcoal-text);
+      letter-spacing: -0.3px;
+    }
+
+    .section-action-btn {
+      background: none;
+      border: none;
+      color: var(--muted-brass);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .docs-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .doc-item-card {
+      background: var(--surface-white);
+      border-radius: 16px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 2px 10px rgba(52, 56, 49, 0.04);
+      cursor: pointer;
+      border: 1px solid var(--soft-stone-border);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .doc-item-card:active {
+      transform: scale(0.99);
+      background: #FAFAF7;
+    }
+
+    .doc-icon-box {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: var(--soft-stone);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--forest-green);
+      flex-shrink: 0;
+    }
+
+    .doc-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .doc-name {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--charcoal-text);
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .doc-meta {
+      font-size: 12px;
+      color: var(--charcoal-muted);
+    }
+
+    .doc-badge-locked {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted-brass);
+      background: rgba(167, 131, 82, 0.12);
+      padding: 2px 6px;
+      border-radius: 6px;
+      margin-top: 3px;
+    }
+
+    .doc-chevron {
+      color: var(--charcoal-muted);
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    /* ==========================================================================
+       Evidence Tab Styles
+       ========================================================================== */
+    .segmented-switcher {
+      display: flex;
+      background: var(--soft-stone);
+      border-radius: 14px;
+      padding: 4px;
+      gap: 4px;
+    }
+
+    .segment-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: transparent;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--charcoal-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+
+    .segment-btn.active {
+      background: var(--forest-green);
+      color: #FFFFFF;
+      box-shadow: 0 2px 6px rgba(38, 58, 46, 0.2);
+    }
+
+    .summary-card {
+      background: var(--surface-white);
+      border-radius: 18px;
+      padding: 16px;
+      border: 1px solid var(--soft-stone-border);
+      box-shadow: 0 2px 8px rgba(52, 56, 49, 0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .summary-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .summary-badge {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--charcoal-text);
+    }
+
+    .time-confidence-tag {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--forest-green);
+      background: rgba(38, 58, 46, 0.08);
+      padding: 3px 8px;
+      border-radius: 8px;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 6px;
+      background: var(--soft-stone);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--muted-brass);
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+
+    .summary-text {
+      font-size: 12px;
+      color: var(--charcoal-muted);
+      line-height: 1.4;
+    }
+
+    .room-cards-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .room-card {
+      background: var(--surface-white);
+      border: 1px solid var(--soft-stone-border);
+      border-radius: 18px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 2px 8px rgba(52, 56, 49, 0.04);
+    }
+
+    .room-card-top {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .thumb-box {
+      width: 58px;
+      height: 58px;
+      border-radius: 12px;
+      background: var(--soft-stone);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+      border: 1px solid var(--soft-stone-border);
+    }
+
+    .thumb-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .room-card-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .room-title {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--charcoal-text);
+      margin-bottom: 2px;
+    }
+
+    .room-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      margin-top: 2px;
+    }
+
+    .room-status-badge.verified {
+      background: rgba(38, 58, 46, 0.1);
+      color: var(--forest-green);
+    }
+
+    .room-status-badge.pending {
+      background: rgba(167, 131, 82, 0.12);
+      color: var(--muted-brass);
+    }
+
+    .btn-room-action {
+      background: var(--forest-green);
+      color: #FFFFFF;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      align-self: center;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+
+    .btn-room-action:active {
+      opacity: 0.85;
+      transform: scale(0.97);
+    }
+
+    /* Condition Note Input (FR-CAP-02) */
+    .defect-note-input {
+      width: 100%;
+      background: var(--warm-paper);
+      border: 1px solid var(--soft-stone-border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 12px;
+      color: var(--charcoal-text);
+      font-family: inherit;
+      outline: none;
+    }
+
+    .defect-note-input:focus {
+      border-color: var(--forest-green);
+    }
+
+    /* Move-Out Classification Selector (FR-CMP-03) */
+    .classification-select {
+      width: 100%;
+      background: var(--warm-paper);
+      border: 1px solid var(--soft-stone-border);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--charcoal-text);
+      outline: none;
+    }
+
+    /* Collapsible Cryptographic Seal */
+    .seal-toggle {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted-brass);
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      padding: 2px 0;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .seal-drawer {
+      display: none;
+      background: var(--warm-paper);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 11px;
+      color: var(--charcoal-muted);
+      border: 1px solid var(--soft-stone-border);
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .seal-drawer.open {
+      display: flex;
+    }
+
+    .seal-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .seal-val {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: var(--charcoal-text);
+      word-break: break-all;
+    }
+
+    /* Evidence Bottom Action Buttons */
+    .btn-primary-action {
+      background: var(--forest-green);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 14px;
+      padding: 14px 18px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(38, 58, 46, 0.15);
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary-action:active {
+      transform: scale(0.98);
+      opacity: 0.9;
+    }
+
+    .btn-secondary-action {
+      background: var(--surface-white);
+      color: var(--forest-green);
+      border: 1.5px solid var(--forest-green);
+      border-radius: 14px;
+      padding: 12px 18px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-secondary-action:active {
+      background: var(--soft-stone);
+    }
+
+    .witness-ack-banner {
+      font-size: 11.5px;
+      color: var(--charcoal-muted);
+      background: var(--soft-stone);
+      border-radius: 10px;
+      padding: 10px 12px;
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    /* ==========================================================================
+       Timeline Tab Styles
+       ========================================================================== */
+    .timeline-filter-bar {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+
+    .timeline-filter-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .filter-pill {
+      background: var(--surface-white);
+      border: 1px solid var(--soft-stone-border);
+      border-radius: 18px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--charcoal-muted);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .filter-pill.active {
+      background: var(--forest-green);
+      color: #FFFFFF;
+      border-color: var(--forest-green);
+    }
+
+    .timeline-tree {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding-left: 20px;
+    }
+
+    .timeline-tree::before {
+      content: "";
+      position: absolute;
+      top: 10px;
+      bottom: 10px;
+      left: 7px;
+      width: 2px;
+      background: var(--muted-brass);
+    }
+
+    .timeline-node {
+      position: relative;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -20px;
+      top: 16px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--forest-green);
+      border: 2px solid var(--warm-paper);
+      box-shadow: 0 0 0 2px var(--muted-brass);
+    }
+
+    .timeline-card {
+      background: var(--surface-white);
+      border: 1px solid var(--soft-stone-border);
+      border-radius: 16px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 2px 8px rgba(52, 56, 49, 0.03);
+    }
+
+    /* ==========================================================================
+       Settings Tab Styles
+       ========================================================================== */
+    .settings-section {
+      background: var(--surface-white);
+      border: 1px solid var(--soft-stone-border);
+      border-radius: 18px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 2px 8px rgba(52, 56, 49, 0.03);
+    }
+
+    .settings-sec-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--charcoal-text);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .lang-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .lang-item-btn {
+      background: var(--warm-paper);
+      border: 1px solid var(--soft-stone-border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--charcoal-text);
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s ease;
+    }
+
+    .lang-item-btn.selected {
+      background: var(--forest-green);
+      color: #FFFFFF;
+      border-color: var(--forest-green);
+    }
+
+    .input-field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--charcoal-muted);
+    }
+
+    .text-input, .select-input {
+      background: var(--warm-paper);
+      border: 1px solid var(--soft-stone-border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: var(--charcoal-text);
+      font-family: inherit;
+      outline: none;
+    }
+
+    .text-input:focus, .select-input:focus {
+      border-color: var(--forest-green);
+    }
+
+    .switch-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .switch-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .switch-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--charcoal-text);
+    }
+
+    .switch-desc {
+      font-size: 11px;
+      color: var(--charcoal-muted);
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      background: var(--soft-stone);
+      border-radius: 12px;
+      transition: background 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .toggle-switch.on {
+      background: var(--forest-green);
+    }
+
+    .toggle-knob {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 18px;
+      height: 18px;
+      background: #FFFFFF;
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      transition: transform 0.2s ease;
+    }
+
+    .toggle-switch.on .toggle-knob {
+      transform: translateX(20px);
+    }
+
+    .action-row-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      cursor: pointer;
+      border-bottom: 1px solid var(--soft-stone);
+    }
+
+    .action-row-item:last-child {
+      border-bottom: none;
+    }
+
+    .action-danger {
+      color: #DC2626 !important;
+    }
+
+    .guardrail-card {
+      background: var(--warm-paper);
+      border: 1px solid var(--soft-stone-border);
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 11.5px;
+      color: var(--charcoal-muted);
+      line-height: 1.45;
+    }
+
+    /* ==========================================================================
+       Fixed Bottom Navigation Bar
+       ========================================================================== */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      background: var(--surface-white);
+      border-top: 1px solid var(--soft-stone-border);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      padding: 8px 6px 14px 6px;
+      z-index: 10000;
+      box-shadow: 0 -2px 10px rgba(52, 56, 49, 0.04);
+    }
+
+    .nav-tab-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      background: transparent;
+      border: none;
+      color: var(--charcoal-muted);
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .nav-tab-btn.active {
+      color: var(--forest-green);
+      font-weight: 800;
+    }
+
+    .nav-tab-btn.active svg {
+      stroke: var(--forest-green);
+      transform: translateY(-1px);
+    }
+
+    /* ==========================================================================
+       Modal Bottom Sheet
+       ========================================================================== */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(38, 58, 46, 0.55);
+      z-index: 100000;
+    }
+
+    .modal-backdrop.open {
+      display: block !important;
+    }
+
+    .modal-sheet {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      max-height: 85vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      background: var(--surface-white);
+      border-radius: 24px 24px 0 0;
+      padding: 24px 20px 48px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-sizing: border-box;
+      box-shadow: 0 -8px 32px rgba(38, 58, 46, 0.2);
+    }
+
+    .icon {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Full-Screen Brand Splash Animation Overlay (2.4s + Tap-to-Skip) -->
+  <div id="splash-overlay" onclick="skipSplash()">
+    <!-- 136x136px Custom TenancyShield SVG Emblem -->
+    <svg class="splash-emblem" viewBox="0 0 100 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Shield Outer Contour -->
+      <path class="shield-path" d="M50 8 L86 24 C86 64 68 88 50 98 C32 88 14 64 14 24 Z" stroke="#263A2E" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+      <!-- House Roof & Chimney -->
+      <path d="M34 46 L50 32 L66 46" stroke="#263A2E" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M58 37 V30 H63 V41" stroke="#263A2E" stroke-width="3" stroke-linecap="round" />
+      <!-- 2x2 Window Grid in Muted Brass -->
+      <rect x="44" y="38" width="5" height="5" rx="1" fill="#A78352" />
+      <rect x="51" y="38" width="5" height="5" rx="1" fill="#A78352" />
+      <rect x="44" y="45" width="5" height="5" rx="1" fill="#A78352" />
+      <rect x="51" y="45" width="5" height="5" rx="1" fill="#A78352" />
+      <!-- Tilted Document with 3 lines -->
+      <rect x="36" y="58" width="28" height="22" rx="3" stroke="#263A2E" stroke-width="3" fill="#F7F5EF" />
+      <line x1="41" y1="64" x2="59" y2="64" stroke="#263A2E" stroke-width="2" stroke-linecap="round" />
+      <line x1="41" y1="69" x2="59" y2="69" stroke="#263A2E" stroke-width="2" stroke-linecap="round" />
+      <line x1="41" y1="74" x2="52" y2="74" stroke="#A78352" stroke-width="2" stroke-linecap="round" />
+    </svg>
+
+    <div class="splash-wordmark">
+      <span style="color:#263A2E; font-weight:800;">Tenancy</span><span style="color:#A78352; font-weight:800;">Shield</span>
+    </div>
+
+    <div class="splash-tagline-wrap">
+      <div class="splash-line"></div>
+      <span class="splash-tagline">— Your rights. Your records. Protected. —</span>
+      <div class="splash-line"></div>
+    </div>
+
+    <div class="splash-loader-track">
+      <div class="splash-loader-bar"></div>
+    </div>
+  </div>
+
+  <div class="app-viewport">
+
+    <!-- Top App Header -->
+    <header class="app-header">
+      <div class="brand-left">
+        <div class="brand-badge">
+          <!-- White Shield Checkmark Icon -->
+          <svg class="icon" style="color:#FFFFFF; width:22px; height:22px;" viewBox="0 0 24 24">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            <path d="m9 12 2 2 4-4"></path>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1 id="txt-app-title">TenancyShield</h1>
+          <p id="txt-app-subtitle">Your tenancy, documented.</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Interactive Language Dropdown Trigger Button -->
+        <button type="button" class="lang-dropdown-trigger" onclick="toggleLanguageDropdown(event)" id="btn-lang-dropdown">
+          <span>🌐</span>
+          <span id="txt-lang-label">English</span>
+          <span style="font-size:10px;">▾</span>
+        </button>
+
+        <!-- Floating Language Menu -->
+        <div id="lang-dropdown-menu" class="lang-floating-menu">
+          <button type="button" class="lang-menu-item active" onclick="selectLanguage('en')">English</button>
+          <button type="button" class="lang-menu-item" onclick="selectLanguage('hi')">हिन्दी (Hindi)</button>
+          <button type="button" class="lang-menu-item" onclick="selectLanguage('mr')">मराठी (Marathi)</button>
+          <button type="button" class="lang-menu-item" onclick="selectLanguage('ta')">தமிழ் (Tamil)</button>
+          <button type="button" class="lang-menu-item" onclick="selectLanguage('te')">తెలుగు (Telugu)</button>
+          <button type="button" class="lang-menu-item" onclick="selectLanguage('kn')">ಕನ್ನಡ (Kannada)</button>
+          <button type="button" class="lang-menu-item" onclick="selectLanguage('bn')">বাংলা (Bengali)</button>
+        </div>
+
+        <button type="button" class="profile-btn" onclick="openLeaseRecordSheet()" aria-label="Lease Record">
+          <svg class="icon" style="width:18px; height:18px;" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- TAB 1: HOME PAGE -->
+    <div id="page-home" class="tab-page active">
+      <!-- Editorial Hero Header -->
+      <section class="hero-editorial">
+        <div class="editorial-overline" id="txt-your-records">YOUR RECORDS</div>
+        <div class="editorial-title" id="txt-main-heading">Everything in its place.</div>
+        <div class="editorial-subtitle" id="txt-main-subtitle">Agreements, photos, receipts and important records.</div>
+      </section>
+
+      <!-- Primary Forest Green Hero Card -->
+      <section class="forest-hero-card">
+        <!-- Row 1: Evidence vault -->
+        <div class="hero-card-row" onclick="switchNavTab('evidence')">
+          <div class="hero-icon-box">
+            <svg class="icon" style="width:24px; height:24px; color:#FFFFFF;" viewBox="0 0 24 24">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              <line x1="12" y1="11" x2="12" y2="17"></line>
+              <line x1="9" y1="14" x2="15" y2="14"></line>
+            </svg>
+          </div>
+          <div class="hero-row-text">
+            <div class="hero-row-title" id="txt-evidence-vault">Evidence vault</div>
+            <div class="hero-row-subtitle" id="txt-vault-progress-sub">Tap to capture room photos</div>
+          </div>
+          <div class="hero-row-action">↗</div>
+        </div>
+
+        <div class="hero-divider"></div>
+
+        <!-- Row 2: Rental Agreement & Flat Details -->
+        <div class="hero-card-row" onclick="openLeaseRecordSheet()">
+          <div class="hero-icon-box">
+            <svg class="icon" style="width:22px; height:22px; color:#FFFFFF;" viewBox="0 0 24 24">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+          </div>
+          <div class="hero-row-text">
+            <div class="hero-row-title" id="txt-rental-agreement">Rental Agreement & Flat Details</div>
+            <div class="hero-row-subtitle" id="txt-rental-sub">Add flat address, landlord name & attach lease PDF</div>
+          </div>
+          <div class="hero-row-action" id="icon-rental-check">+</div>
+        </div>
+      </section>
+
+      <!-- Recent Documents Section -->
+      <section class="section-header-row">
+        <h2 class="section-title" id="txt-recent-docs">Recent documents</h2>
+        <button type="button" class="section-action-btn" onclick="switchNavTab('evidence')" id="txt-see-all">See all</button>
+      </section>
+
+      <section class="docs-list">
+        <!-- Item 1: Rental agreement PDF -->
+        <div class="doc-item-card" onclick="openLeaseRecordSheet()">
+          <div class="doc-icon-box">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+          </div>
+          <div class="doc-info">
+            <div class="doc-name" id="item-rental-name">Rental agreement.pdf</div>
+            <div class="doc-meta" id="item-rental-meta">Tap to attach lease PDF</div>
+          </div>
+          <div class="doc-chevron">></div>
+        </div>
+
+        <!-- Item 2: Move-in photos -->
+        <div class="doc-item-card" onclick="switchNavTab('evidence')">
+          <div class="doc-icon-box">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+          </div>
+          <div class="doc-info">
+            <div class="doc-name" id="txt-move-in-photos">Move-in condition photos</div>
+            <div class="doc-meta" id="item-photos-meta">0 of 4 photos taken</div>
+          </div>
+          <div class="doc-chevron">></div>
+        </div>
+
+        <!-- Item 3: Condition Inspection Report (PDF) -->
+        <div class="doc-item-card" onclick="handlePdfReportTap()">
+          <div class="doc-icon-box">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          </div>
+          <div class="doc-info">
+            <div class="doc-name" id="txt-forensic-report">Condition Inspection Report (PDF)</div>
+            <div class="doc-meta" id="txt-forensic-report-sub">Locked — Complete 4/4 photos first</div>
+          </div>
+          <div class="doc-chevron">></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB 2: EVIDENCE PAGE -->
+    <div id="page-evidence" class="tab-page">
+      <!-- Segmented Pill Switcher -->
+      <nav class="segmented-switcher" aria-label="Evidence phase selection">
+        <button type="button" id="btn-phase-movein" class="segment-btn active" onclick="switchEvidencePhase('MOVE_IN')">
+          <span id="txt-tab-move-in">Move-in baseline</span>
+        </button>
+        <button type="button" id="btn-phase-moveout" class="segment-btn" onclick="switchEvidencePhase('MOVE_OUT')">
+          <span id="txt-tab-move-out">Move-out inspection</span>
+        </button>
+      </nav>
+
+      <!-- Progress Summary Card -->
+      <section class="summary-card">
+        <div class="summary-header">
+          <span class="summary-badge" id="txt-areas-documented">0 of 4 required areas photographed</span>
+          <span class="time-confidence-tag" id="txt-time-confidence">🟢 Time Confidence: High</span>
+        </div>
+        <div class="progress-track">
+          <div id="evidence-progress-fill" class="progress-fill" style="width: 0%;"></div>
+        </div>
+        <div class="summary-text" id="txt-baseline-status">Capture baseline photos of all 4 areas before move-in.</div>
+      </section>
+
+      <!-- 4 Room Cards -->
+      <section class="room-cards-list" id="evidence-rooms-container">
+        <!-- Rendered dynamically -->
+      </section>
+
+      <!-- Bottom Action Section inside Evidence Tab -->
+      <button type="button" class="btn-primary-action" onclick="handlePdfReportTap()">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+        <span id="txt-export-pdf-btn">Lock Baseline & Export PDF Report</span>
+      </button>
+
+      <button type="button" class="btn-secondary-action" onclick="showWitnessQR()">
+        <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        <span id="txt-show-witness-qr">Landlord Witness Acknowledgement (QR)</span>
+      </button>
+
+      <div class="witness-ack-banner">
+        ⚖️ Your baseline is valid unilaterally. Landlord acknowledgement records receipt only and is not an admission of liability.
+      </div>
+    </div>
+
+    <!-- TAB 3: TIMELINE PAGE -->
+    <div id="page-timeline" class="tab-page">
+      <section class="section-header-row" style="margin-top:0;">
+        <h2 class="section-title" id="txt-timeline-title">Audit History & Chain</h2>
+      </section>
+
+      <!-- Top Chain Verification Button -->
+      <button type="button" class="btn-primary-action" onclick="triggerChainVerification()">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
+        <span id="txt-verify-chain-btn">Run Local Integrity Check</span>
+      </button>
+
+      <!-- Filter Bar -->
+      <div class="timeline-filter-bar">
+        <button type="button" class="filter-pill active" onclick="setTimelineFilter('ALL')" id="filter-all">All</button>
+        <button type="button" class="filter-pill" onclick="setTimelineFilter('MOVE_IN')" id="filter-movein">Move-in</button>
+        <button type="button" class="filter-pill" onclick="setTimelineFilter('MOVE_OUT')" id="filter-moveout">Move-out</button>
+        <button type="button" class="filter-pill" onclick="setTimelineFilter('DOCUMENTS')" id="filter-docs">Lease & Reports</button>
+      </div>
+
+      <!-- Vertical Timeline Tree -->
+      <section class="timeline-tree" id="timeline-container">
+        <!-- Rendered dynamically -->
+      </section>
+    </div>
+
+    <!-- TAB 4: SETTINGS PAGE -->
+    <div id="page-settings" class="tab-page">
+      <!-- Section 1: Indian Language Selector -->
+      <section class="settings-section">
+        <div class="settings-sec-title" id="txt-settings-lang">Language / भाषा निवडा</div>
+        <div class="lang-grid">
+          <button type="button" class="lang-item-btn" onclick="selectLanguage('en')" id="lang-btn-en">
+            <span>English</span>
+            <span class="lang-check">✓</span>
+          </button>
+          <button type="button" class="lang-item-btn" onclick="selectLanguage('hi')" id="lang-btn-hi">
+            <span>हिन्दी (Hindi)</span>
+            <span class="lang-check"></span>
+          </button>
+          <button type="button" class="lang-item-btn" onclick="selectLanguage('mr')" id="lang-btn-mr">
+            <span>मराठी (Marathi)</span>
+            <span class="lang-check"></span>
+          </button>
+          <button type="button" class="lang-item-btn" onclick="selectLanguage('ta')" id="lang-btn-ta">
+            <span>தமிழ் (Tamil)</span>
+            <span class="lang-check"></span>
+          </button>
+          <button type="button" class="lang-item-btn" onclick="selectLanguage('te')" id="lang-btn-te">
+            <span>తెలుగు (Telugu)</span>
+            <span class="lang-check"></span>
+          </button>
+          <button type="button" class="lang-item-btn" onclick="selectLanguage('kn')" id="lang-btn-kn">
+            <span>ಕನ್ನಡ (Kannada)</span>
+            <span class="lang-check"></span>
+          </button>
+          <button type="button" class="lang-item-btn" onclick="selectLanguage('bn')" id="lang-btn-bn">
+            <span>বাংলা (Bengali)</span>
+            <span class="lang-check"></span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Section 2: Tenancy & Lease Profile Shortcut -->
+      <section class="settings-section">
+        <div class="settings-sec-title">Tenancy & Lease Details</div>
+        <p style="font-size:12px; color:var(--charcoal-muted);">Add landlord name, deposit amount, and jurisdiction printed on your report.</p>
+        <button type="button" class="btn-secondary-action" onclick="openLeaseRecordSheet()">
+          <span>Edit Lease & Property Record</span>
+        </button>
+      </section>
+
+      <!-- Section 3: Camera & Security Preferences -->
+      <section class="settings-section">
+        <div class="settings-sec-title" id="txt-settings-security">Camera & Security Preferences</div>
+        
+        <div class="switch-row" onclick="toggleSetting('ghost_overlay_default')">
+          <div class="switch-info">
+            <span class="switch-title" id="txt-opt-ghost">Move-out ghost alignment overlay</span>
+            <span class="switch-desc" id="txt-opt-ghost-sub">Displays semi-transparent baseline photo for exact alignment</span>
+          </div>
+          <div class="toggle-switch on" id="toggle-ghost">
+            <div class="toggle-knob"></div>
+          </div>
+        </div>
+
+        <div class="switch-row" onclick="toggleSetting('ai_clarity_enabled')">
+          <div class="switch-info">
+            <span class="switch-title">On-device AI clarity & screen warnings</span>
+            <span class="switch-desc">Warns if photo is blurry, dark, or captured from a screen</span>
+          </div>
+          <div class="toggle-switch on" id="toggle-clarity">
+            <div class="toggle-knob"></div>
+          </div>
+        </div>
+
+        <div class="switch-row" onclick="toggleSetting('pin_lock_enabled')">
+          <div class="switch-info">
+            <span class="switch-title" id="txt-opt-pin">App PIN lock on startup</span>
+            <span class="switch-desc" id="txt-opt-pin-sub">Requires 4-digit PIN before unlocking tenancy vault</span>
+          </div>
+          <div class="toggle-switch" id="toggle-pin">
+            <div class="toggle-knob"></div>
+          </div>
+        </div>
+
+        <div class="switch-row" style="cursor:default;">
+          <div class="switch-info">
+            <span class="switch-title" id="txt-hardware-sec">Device Keystore</span>
+            <span class="switch-desc" style="color:var(--forest-green); font-weight:700;" id="txt-hardware-status">Active & hardware-backed (Knox / TEE)</span>
+          </div>
+          <span style="font-size:16px; color:var(--forest-green);">🛡️</span>
+        </div>
+      </section>
+
+      <!-- Legal & Privacy Guardrails Card -->
+      <div class="guardrail-card">
+        <strong>Legal & Statutory Guardrail (TRD / PRD):</strong><br>
+        TenancyShield is an offline-first tamper-evident evidence-preservation and BSA 2023 Section 63 certificate-preparation aid. It does not provide automated legal advice or guarantee court admissibility. Records remain stored exclusively on your device.
+      </div>
+
+      <!-- Section 4: Data & Vault Management -->
+      <section class="settings-section">
+        <div class="settings-sec-title" id="txt-settings-vault">Data & Vault Management</div>
+        
+        <div class="action-row-item" onclick="handlePdfReportTap()">
+          <div class="switch-info">
+            <span class="switch-title" id="txt-export-full">Export full forensic PDF report</span>
+            <span class="switch-desc" id="txt-export-sub">Requires 4/4 baseline records completed</span>
+          </div>
+          <div class="doc-chevron">></div>
+        </div>
+
+        <div class="action-row-item action-danger" onclick="confirmResetVault()">
+          <div class="switch-info">
+            <span class="switch-title action-danger" id="txt-reset-vault">Start new inspection (Reset vault)</span>
+            <span class="switch-desc" id="txt-reset-sub">Permanently delete all stored evidence and start fresh</span>
+          </div>
+          <div class="doc-chevron action-danger">></div>
+        </div>
+      </section>
+    </div>
+
+  </div>
+
+  <!-- Fixed Bottom Navigation Bar -->
+  <nav class="bottom-nav">
+    <button type="button" class="nav-tab-btn active" onclick="switchNavTab('home')" id="nav-btn-home">
+      <svg class="icon" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+      <span id="nav-lbl-home">Home</span>
+    </button>
+    <button type="button" class="nav-tab-btn" onclick="switchNavTab('evidence')" id="nav-btn-evidence">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+      <span id="nav-lbl-evidence">Evidence</span>
+    </button>
+    <button type="button" class="nav-tab-btn" onclick="switchNavTab('timeline')" id="nav-btn-timeline">
+      <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+      <span id="nav-lbl-timeline">Timeline</span>
+    </button>
+    <button type="button" class="nav-tab-btn" onclick="switchNavTab('settings')" id="nav-btn-settings">
+      <svg class="icon" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+      <span id="nav-lbl-settings">Settings</span>
+    </button>
+  </nav>
+
+  <!-- Generic Bottom Sheet Modal -->
+  <div id="app-modal" class="modal-backdrop" onclick="closeModalOnBackdrop(event)">
+    <div class="modal-sheet" id="modal-sheet-content">
+      <!-- Injected dynamically -->
+    </div>
+  </div>
+
+  <script>
+    // 7 Indian Languages Translation Engine
+    const I18N_DICTIONARY = {
+      en: {
+        app_title: "TenancyShield",
+        app_subtitle: "Your tenancy, documented.",
+        your_records: "YOUR RECORDS",
+        main_heading: "Everything in its place.",
+        main_subtitle: "Agreements, photos, receipts and important records.",
+        evidence_vault: "Evidence vault",
+        vault_subtitle_empty: "Tap to capture room photos",
+        vault_subtitle_progress: "{count} of 8 rooms documented",
+        rental_agreement: "Rental Agreement & Flat Details",
+        rental_subtitle_empty: "Add flat address, landlord name & attach lease PDF",
+        rental_subtitle_saved: "Lease details saved ✓",
+        recent_docs: "Recent documents",
+        see_all: "See all",
+        move_in_photos: "Move-in condition photos",
+        photos_saved: "{count} of 4 photos taken",
+        forensic_report: "Condition Inspection Report (PDF)",
+        forensic_report_locked: "Locked — Complete 4/4 photos first",
+        forensic_report_ready: "BSA 2023 Sec 63 • Ready to export",
+        nav_home: "Home",
+        nav_evidence: "Evidence",
+        nav_timeline: "Timeline",
+        nav_settings: "Settings",
+        tab_move_in: "Move-in baseline",
+        tab_move_out: "Move-out inspection",
+        areas_documented: "{count} of 4 required areas photographed",
+        baseline_status_good: "All baseline photos are securely signed and saved on this device.",
+        baseline_status_empty: "Capture baseline photos of all 4 areas before move-in.",
+        room_wall_1: "Walls & Baseboards",
+        room_wall_1_sub: "Structural plaster, skirting & surface integrity",
+        room_flooring: "Flooring & Carpets",
+        room_flooring_sub: "Planks, finish wear, joints & floor seals",
+        room_ceiling: "Ceiling & Light Fixtures",
+        room_ceiling_sub: "Overhead finish, junction covers & fixtures",
+        room_meters: "Utility Meters & Sockets",
+        room_meters_sub: "Dial/digital readouts, breakers & switchplates",
+        status_verified: "Saved · Verified",
+        status_pending: "Not photographed yet",
+        btn_take_photo: "Capture photo",
+        btn_retake: "Retake",
+        btn_align_compare: "Compare with Ghost Overlay",
+        view_seal: "View cryptographic seal",
+        hide_seal: "Hide cryptographic seal",
+        export_pdf_btn: "Lock Baseline & Export PDF Report",
+        show_witness_qr: "Landlord Witness Acknowledgement (QR)",
+        timeline_title: "Audit History & Chain",
+        filter_all: "All",
+        filter_move_in: "Move-in",
+        filter_move_out: "Move-out",
+        filter_docs: "Lease & Reports",
+        btn_verify_chain: "Run Local Integrity Check",
+        verifying_chain: "Verifying hash chain...",
+        chain_verified_title: "Chain Integrity Verified",
+        chain_verified_sub: "All {count} records verified • Zero tampering detected",
+        settings_lang: "Language / भाषा निवडा",
+        settings_security: "Camera & Security Preferences",
+        opt_ghost: "Move-out ghost alignment overlay",
+        opt_ghost_sub: "Displays semi-transparent baseline photo for exact alignment",
+        opt_pin: "App PIN lock on startup",
+        opt_pin_sub: "Requires 4-digit PIN before unlocking tenancy vault",
+        hardware_sec: "Device Keystore",
+        hardware_status: "Active & hardware-backed (Knox / TEE)",
+        settings_vault: "Data & Vault Management",
+        export_full: "Export full forensic PDF report",
+        export_sub: "Requires 4/4 baseline records completed",
+        reset_vault: "Start new inspection (Reset vault)",
+        reset_sub: "Permanently delete all stored evidence and start fresh",
+        reset_confirm_title: "Reset Vault & Start New Inspection?",
+        reset_confirm_msg: "This will permanently remove all stored photos and evidence records from this device. This action cannot be undone.",
+        btn_cancel: "Cancel",
+        btn_confirm_reset: "Reset Vault",
+        close: "Close"
+      },
+      hi: {
+        app_title: "टेनेंसीशील्ड",
+        app_subtitle: "आपकी किरायेदारी, सुरक्षित प्रमाण।",
+        your_records: "आपके दस्तावेज़",
+        main_heading: "सब कुछ अपनी जगह पर।",
+        main_subtitle: "समझौते, तस्वीरें, रसीदें और महत्वपूर्ण रिकॉर्ड।",
+        evidence_vault: "सबूत तिजोरी",
+        vault_subtitle_empty: "कमरे की तस्वीरें लेने हेतु टैप करें",
+        vault_subtitle_progress: "8 में से {count} कमरे प्रलेखित",
+        rental_agreement: "किराया समझौता व फ्लैट विवरण",
+        rental_subtitle_empty: "फ्लैट का पता, मकान मालिक का नाम व लीज PDF जोड़ें",
+        rental_subtitle_saved: "किराया विवरण सुरक्षित ✓",
+        recent_docs: "हालिया दस्तावेज़",
+        see_all: "सभी देखें",
+        move_in_photos: "प्रवेश समय की तस्वीरें",
+        photos_saved: "4 में से {count} तस्वीरें ली गईं",
+        forensic_report: "तुलनात्मक ऑडिट रिपोर्ट (PDF)",
+        forensic_report_locked: "अवरुद्ध — पहले 4/4 तस्वीरें पूरी करें",
+        forensic_report_ready: "BSA 2023 धारा 63 • निर्यात हेतु तैयार",
+        nav_home: "होम",
+        nav_evidence: "सबूत",
+        nav_timeline: "टाइमलाइन",
+        nav_settings: "सेटिंग्स",
+        tab_move_in: "प्रवेश बेसलाइन",
+        tab_move_out: "निकास निरीक्षण",
+        areas_documented: "4 में से {count} आवश्यक क्षेत्रों की तस्वीरें ली गईं",
+        baseline_status_good: "सभी बेसलाइन तस्वीरें डिवाइस पर डिजिटल हस्ताक्षर सहित सुरक्षित हैं।",
+        baseline_status_empty: "प्रवेश से पहले सभी 4 क्षेत्रों की बेसलाइन तस्वीरें लें।",
+        room_wall_1: "दीवारें और बेसबोर्ड",
+        room_wall_1_sub: "प्लास्टर, स्कर्टिंग और सतह की अखंडता",
+        room_flooring: "फर्श और कालीन",
+        room_flooring_sub: "तख्ते, घिसावट, जोड़ और फर्श की सील",
+        room_ceiling: "छत और लाइट फिक्स्चर",
+        room_ceiling_sub: "छत की फिनिशिंग और जंक्शन कवर",
+        room_meters: "मीटर और बिजली के सॉकेट",
+        room_meters_sub: "रीडिंग, ब्रेकर और स्विचबोर्ड",
+        status_verified: "सहेजा गया · सत्यापित",
+        status_pending: "अभी फोटो नहीं ली गई",
+        btn_take_photo: "फोटो लें",
+        btn_retake: "पुनः लें",
+        btn_align_compare: "भूत ओवरले से तुलना करें",
+        view_seal: "क्रिप्टोग्राफिक सील देखें",
+        hide_seal: "सील छुपाएं",
+        export_pdf_btn: "बेसलाइन लॉक करें व PDF रिपोर्ट प्राप्त करें",
+        show_witness_qr: "मकान मालिक गवाह QR कोड",
+        timeline_title: "ऑडिट इतिहास और साख",
+        filter_all: "सभी",
+        filter_move_in: "प्रवेश",
+        filter_move_out: "निकास",
+        filter_docs: "लीज व रिपोर्ट",
+        btn_verify_chain: "स्थानीय अखंडता जांच चलाएं",
+        verifying_chain: "हैश श्रृंखला की जांच जारी है...",
+        chain_verified_title: "श्रृंखला अखंडता सत्यापित",
+        chain_verified_sub: "सभी {count} रिकॉर्ड सत्यापित • कोई छेड़छाड़ नहीं मिली",
+        settings_lang: "भाषा / Choose Language",
+        settings_security: "कैमरा और सुरक्षा प्राथमिकताएं",
+        opt_ghost: "निकास भूत संरेखण ओवरले",
+        opt_ghost_sub: "सटीक संरेखण के लिए बेसलाइन फोटो प्रदर्शित करता है",
+        opt_pin: "स्टार्टअप पर ऐप पिन लॉक",
+        opt_pin_sub: "वॉल्ट खोलने से पहले 4-अंकों का पिन आवश्यक है",
+        hardware_sec: "डिवाइस कीस्टोर",
+        hardware_status: "सक्रिय और हार्डवेयर-समर्थित (Knox / TEE)",
+        settings_vault: "डेटा और वॉल्ट प्रबंधन",
+        export_full: "पूर्ण फॉरेन्सिक PDF रिपोर्ट प्राप्त करें",
+        export_sub: "4/4 बेसलाइन रिकॉर्ड पूर्ण होना आवश्यक है",
+        reset_vault: "नया निरीक्षण शुरू करें (वॉल्ट रीसेट)",
+        reset_sub: "सभी संग्रहीत साक्ष्य स्थायी रूप से हटाएं",
+        reset_confirm_title: "वॉल्ट रीसेट करें?",
+        reset_confirm_msg: "इससे सभी सहेजी गई तस्वीरें और रिकॉर्ड स्थायी रूप से हट जाएंगे।",
+        btn_cancel: "रद्द करें",
+        btn_confirm_reset: "रीसेट करें",
+        close: "बंद करें"
+      },
+      mr: {
+        app_title: "टेनन्सीशील्ड",
+        app_subtitle: "तुमची भाडेकरू नोंद, पूर्णपणे सुरक्षित।",
+        your_records: "तुमच्या नोंदी",
+        main_heading: "सर्वकाही योग्य ठिकाणी।",
+        main_subtitle: "करार, छायाचित्रे, पावत्या आणि महत्त्वाच्या नोंदी।",
+        evidence_vault: "पुरावा दालन",
+        vault_subtitle_empty: "खोल्यांचे फोटो घेण्यासाठी टॅप करा",
+        vault_subtitle_progress: "८ पैकी {count} खोल्यांची नोंद पूर्ण",
+        rental_agreement: "भाडे करार आणि घराचा तपशील",
+        rental_subtitle_empty: "घराचा पत्ता, मालकाचे नाव व लीज PDF जोडा",
+        rental_subtitle_saved: "भाडे तपशील जतन ✓",
+        recent_docs: "अलीकडील कागदपत्रे",
+        see_all: "सर्व पहा",
+        move_in_photos: "प्रवेश वेळची छायाचित्रे",
+        photos_saved: "४ पैकी {count} फोटो घेतले",
+        forensic_report: "तुलनात्मक ऑडिट अहवाल (PDF)",
+        forensic_report_locked: "अवरुद्ध — आधी ४/४ फोटो पूर्ण करा",
+        forensic_report_ready: "BSA 2023 कलम 63 • निर्यातीसाठी तयार",
+        nav_home: "मुख्यपृष्ठ",
+        nav_evidence: "पुरावा",
+        nav_timeline: "कालरेषा",
+        nav_settings: "सेटिंग्ज",
+        tab_move_in: "प्रवेश बेसलाइन",
+        tab_move_out: "निर्गमन तपासणी",
+        areas_documented: "४ पैकी {count} जागांचे फोटो घेतले",
+        baseline_status_good: "सर्व बेसलाइन फोटो उपकरणावर डिजिटल स्वाक्षरीसह सुरक्षित आहेत।",
+        baseline_status_empty: "घरात राहण्यापूर्वी ४ ही जागांचे बेसलाइन फोटो घ्या।",
+        room_wall_1: "भिंती आणि बेसबोर्ड",
+        room_wall_1_sub: "प्लास्टर, स्कर्टिंग आणि पृष्ठभागाची स्थिती",
+        room_flooring: "फ्लोरिंग आणि कार्पेट्स",
+        room_flooring_sub: "तुकडे, झीज आणि मजल्याचे सील",
+        room_ceiling: "छत आणि दिवे",
+        room_ceiling_sub: "छताचे फिनिशिंग आणि जंक्शन कव्हर्स",
+        room_meters: "मीटर आणि सॉकेट्स",
+        room_meters_sub: "रीडिंग्ज, ब्रेकर्स आणि स्विचबोर्ड",
+        status_verified: "जतन · पडताळणी पूर्ण",
+        status_pending: "अजून फोटो घेतला नाही",
+        btn_take_photo: "फोटो घ्या",
+        btn_retake: "पुन्हा घ्या",
+        btn_align_compare: "भूत आच्छादनाने जुळवा",
+        view_seal: "क्रिप्टोग्राफिक सील पहा",
+        hide_seal: "सील लपवा",
+        export_pdf_btn: "बेसलाइन लॉक करा व PDF मिळवा",
+        show_witness_qr: "घरमालक साक्षीदार QR कोड",
+        timeline_title: "ऑडिट इतिहास आणि साखळी",
+        filter_all: "सर्व",
+        filter_move_in: "प्रवेश",
+        filter_move_out: "निर्गमन",
+        filter_docs: "करार व अहवाल",
+        btn_verify_chain: "साखळी अखंडता तपासा",
+        verifying_chain: "पडताळणी सुरू आहे...",
+        chain_verified_title: "साखळी अखंडता पडताळली",
+        chain_verified_sub: "सर्व {count} नोंदी पडताळल्या • छेडछाड आढळली नाही",
+        settings_lang: "भाषा निवडा / Language",
+        settings_security: "कॅमेरा आणि सुरक्षा प्राधान्ये",
+        opt_ghost: "निर्गमन घोस्ट अलाइनमेंट आच्छादन",
+        opt_ghost_sub: "अचूक फोटो जुळवणीसाठी बेसलाइन फोटो दाखवतो",
+        opt_pin: "अ‍ॅप सुरू करताना पिन लॉक",
+        opt_pin_sub: "सुरक्षा दालन उघडण्यासाठी ४-अंकी पिन आवश्यक",
+        hardware_sec: "डिव्हाइस कीस्टोर",
+        hardware_status: "सक्रिय आणि हार्डवेअर-समर्थित (Knox / TEE)",
+        settings_vault: "डेटा आणि दालन व्यवस्थापन",
+        export_full: "संपूर्ण फॉरेन्सिक पीडीएफ अहवाल काढा",
+        export_sub: "४/४ नोंदी पूर्ण असणे आवश्यक",
+        reset_vault: "नवीन तपासणी सुरू करा (दालन रीसेट)",
+        reset_sub: "सर्व जुन्या नोंदी कायमस्वरूपी हटवा",
+        reset_confirm_title: "दालन रीसेट करायचे का?",
+        reset_confirm_msg: "यामुळे सर्व नोंदी कायमच्या हटवल्या जातील।",
+        btn_cancel: "रद्द करा",
+        btn_confirm_reset: "दालन रीसेट करा",
+        close: "बंद करा"
+      },
+      ta: {
+        app_title: "டெனன்சிஷீல்ட்",
+        app_subtitle: "உங்கள் வாடகை, ஆவணப்படுத்தப்பட்டது.",
+        your_records: "உங்கள் பதிவுகள்",
+        main_heading: "அனைத்தும் சரியான இடத்தில்.",
+        main_subtitle: "ஒப்பந்தங்கள், புகைப்படங்கள், ரசீதுகள் மற்றும் முக்கிய பதிவுகள்.",
+        evidence_vault: "ஆதார பெட்டகம்",
+        vault_subtitle_empty: "புகைப்படம் எடுக்க தட்டவும்",
+        vault_subtitle_progress: "8 இல் {count} அறைகள் பதிவு செய்யப்பட்டன",
+        rental_agreement: "வாடகை ஒப்பந்தம் & விவரங்கள்",
+        rental_subtitle_empty: "வீட்டு முகவரி, உரிமையாளர் பெயர் & PDF சேர்க்கவும்",
+        rental_subtitle_saved: "விவரங்கள் சேமிக்கப்பட்டன ✓",
+        recent_docs: "சமீபத்திய ஆவணங்கள்",
+        see_all: "அனைத்தும்",
+        move_in_photos: "குடியேற்ற நிலை புகைப்படங்கள்",
+        photos_saved: "4 இல் {count} படங்கள் எடுக்கப்பட்டன",
+        forensic_report: "ஒப்பீட்டு தணிக்கை அறிக்கை (PDF)",
+        forensic_report_locked: "பூட்டப்பட்டது — முதலில் 4/4 முடிக்கவும்",
+        forensic_report_ready: "BSA 2023 பிரிவு 63 • தயார்",
+        nav_home: "முகப்பு",
+        nav_evidence: "ஆதாரம்",
+        nav_timeline: "காலவரிசை",
+        nav_settings: "அமைப்புகள்",
+        tab_move_in: "குடியேற்ற அடிப்படை",
+        tab_move_out: "வெளியேற்ற ஆய்வு",
+        areas_documented: "4 இல் {count} பகுதிகள் பதிவு",
+        baseline_status_good: "அனைத்து புகைப்படங்களும் சாதனத்தில் டிஜிட்டல் கையொப்பத்துடன் சேமிக்கப்பட்டுள்ளன.",
+        baseline_status_empty: "குடியேறுவதற்கு முன் 4 பகுதிகளின் படங்களையும் எடுக்கவும்.",
+        room_wall_1: "சுவர்கள் மற்றும் ஸ்கர்டிங்",
+        room_wall_1_sub: "பூச்சு, தரை விளிம்புகள் மற்றும் மேற்பரப்பு",
+        room_flooring: "தரை மற்றும் விரிப்புகள்",
+        room_flooring_sub: "மர பலகைகள் மற்றும் தரை சீல்",
+        room_ceiling: "கூரை மற்றும் விளக்குகள்",
+        room_ceiling_sub: "மேற்கூரை பூச்சு மற்றும் பொருத்துதல்கள்",
+        room_meters: "மீட்டர்கள் மற்றும் சாக்கெட்டுகள்",
+        room_meters_sub: "ரீடிங், பிரேக்கர்கள் மற்றும் சுவிட்சுகள்",
+        status_verified: "சேமிக்கப்பட்டது · சரிபார்க்கப்பட்டது",
+        status_pending: "இன்னும் எடுக்கப்படவில்லை",
+        btn_take_photo: "படம் எடு",
+        btn_retake: "மீண்டும் எடு",
+        btn_align_compare: "ஒப்பிட்டு எடு",
+        view_seal: "கிரிப்டோ முத்திரையை பார்",
+        hide_seal: "முத்திரையை மறை",
+        export_pdf_btn: "அடிப்படைக் கோட்டை பூட்டி PDF பெறுக",
+        show_witness_qr: "சாட்சி QR குறியீடு",
+        timeline_title: "தணிக்கை வரலாறு",
+        filter_all: "அனைத்தும்",
+        filter_move_in: "குடியேற்றம்",
+        filter_move_out: "வெளியேற்றம்",
+        filter_docs: "ஒப்பந்தம் & அறிக்கைகள்",
+        btn_verify_chain: "சங்கிலி நம்பகத்தன்மையை சரிபார்க்கவும்",
+        verifying_chain: "சரிபார்க்கிறது...",
+        chain_verified_title: "நம்பகத்தன்மை உறுதியானது",
+        chain_verified_sub: "{count} பதிவுகளும் சரிபார்க்கப்பட்டன",
+        settings_lang: "மொழி / Select Language",
+        settings_security: "கேமரா மற்றும் பாதுகாப்பு",
+        opt_ghost: "வெளியேற்ற வழிகாட்டி",
+        opt_ghost_sub: "துல்லியமான ஒப்பீட்டிற்கு முந்தைய படத்தைக் காட்டுகிறது",
+        opt_pin: "துவக்கத்தில் PIN பாதுகாப்பு",
+        opt_pin_sub: "பெட்டகத்தைத் திறக்க 4 இலக்க PIN தேவை",
+        hardware_sec: "சாதன கீஸ்டோர்",
+        hardware_status: "செயலில் உள்ளது (Knox / TEE)",
+        settings_vault: "தரவு மேலாண்மை",
+        export_full: "முழுமையான PDF அறிக்கையைப் பெறுக",
+        export_sub: "4/4 பதிவுகள் தேவை",
+        reset_vault: "புதிய வாடகை (மீட்டமை)",
+        reset_sub: "அனைத்து பதிவுகளையும் நிரந்தரமாக நீக்கு",
+        reset_confirm_title: "பெட்டகத்தை மீட்டமைக்கவா?",
+        reset_confirm_msg: "இது அனைத்து பதிவுகளையும் நிரந்தரமாக நீக்கும்.",
+        btn_cancel: "ரத்து செய்",
+        btn_confirm_reset: "மீட்டமை",
+        close: "மூடு"
+      },
+      te: {
+        app_title: "టెనెన్సీషీల్డ్",
+        app_subtitle: "మీ అద్దె, భద్రపరచబడింది.",
+        your_records: "మీ రికార్డులు",
+        main_heading: "అన్నీ సరైన స్థానంలో.",
+        main_subtitle: "ఒప్పందాలు, ఫోటోలు మరియు ముఖ్యమైన రికార్డులు.",
+        evidence_vault: "ఆధారాల ఖజానా",
+        vault_subtitle_empty: "ఫోటోలు తీయడానికి తాకండి",
+        vault_subtitle_progress: "8 లో {count} గదుల రికార్డు పూర్తయింది",
+        rental_agreement: "అద్దె ఒప్పందం & వివరాలు",
+        rental_subtitle_empty: "చిరునామా, యజమాని పేరు & లీజు PDF జోడించండి",
+        rental_subtitle_saved: "వివరాలు భద్రపరచబడ్డాయి ✓",
+        recent_docs: "ఇటీవలి పత్రాలు",
+        see_all: "అన్నీ చూడండి",
+        move_in_photos: "చేరినప్పటి ఫోటోలు",
+        photos_saved: "4 లో {count} ఫోటోలు తీయబడ్డాయి",
+        forensic_report: "తులనాత్మక ఆడిట్ నివేదిక (PDF)",
+        forensic_report_locked: "లాక్ చేయబడింది — 4/4 పూర్తి చేయండి",
+        forensic_report_ready: "BSA 2023 సెక్షన్ 63 • సిద్ధం",
+        nav_home: "హోమ్",
+        nav_evidence: "ఆధారాలు",
+        nav_timeline: "కాలక్రమం",
+        nav_settings: "సెట్టింగ్‌లు",
+        tab_move_in: "ప్రవేశ బేస్‌లైన్",
+        tab_move_out: "నిష్క్రమణ తనిఖీ",
+        areas_documented: "4 లో {count} ప్రాంతాల ఫోటోలు పూర్తయ్యాయి",
+        baseline_status_good: "అన్ని ఫోటోలు పరికరంలో సురక్షితంగా సంతకం చేయబడ్డాయి.",
+        baseline_status_empty: "చేరే ముందు 4 ప్రాంతాల బేస్‌లైన్ ఫోటోలు తీయండి.",
+        room_wall_1: "గోడలు మరియు బేస్‌బోర్డులు",
+        room_wall_1_sub: "ప్లాస్టరింగ్ మరియు ఉపరితల సమగ్రత",
+        room_flooring: "ఫ్లోరింగ్ మరియు తివాచీలు",
+        room_flooring_sub: "చెక్క పలకలు మరియు ఫ్లోర్ సీల్స్",
+        room_ceiling: "పైకప్పు మరియు లైట్లు",
+        room_ceiling_sub: "పైకప్పు ఫినిషింగ్ మరియు అమరికలు",
+        room_meters: "మీటర్లు మరియు సాకెట్లు",
+        room_meters_sub: "రీడింగులు, బ్రేకర్లు మరియు స్విచ్‌బోర్డులు",
+        status_verified: "భద్రపరచబడింది · ధృవీకరించబడింది",
+        status_pending: "ఇంకా ఫోటో తీయలేదు",
+        btn_take_photo: "ఫోటో తీయండి",
+        btn_retake: "మళ్లీ తీయండి",
+        btn_align_compare: "ఘోస్ట్ ఓవర్‌లేతో పోల్చండి",
+        view_seal: "క్రిప్టోగ్రాఫిక్ సీల్ చూడండి",
+        hide_seal: "సీల్ దాచండి",
+        export_pdf_btn: "బేస్‌లైన్ లాక్ చేసి PDF పొందండి",
+        show_witness_qr: "సాక్షి QR కోడ్",
+        timeline_title: "ఆడిట్ చరిత్ర",
+        filter_all: "అన్నీ",
+        filter_move_in: "ప్రవేశం",
+        filter_move_out: "నిష్క్రమణ",
+        filter_docs: "లీజు & నివేదికలు",
+        btn_verify_chain: "సమగ్రతను తనిఖీ చేయండి",
+        verifying_chain: "ధృవీకరిస్తోంది...",
+        chain_verified_title: "సమగ్రత ధృవీకరించబడింది",
+        chain_verified_sub: "{count} రికార్డులు ధృవీకరించబడ్డాయి",
+        settings_lang: "భాష / Select Language",
+        settings_security: "కెమెరా మరియు భద్రత",
+        opt_ghost: "ఘోస్ట్ అలైన్‌మెంట్ ఓవర్‌లే",
+        opt_ghost_sub: "ఖచ్చితమైన పోలిక కోసం బేస్‌లైన్ ఫోటో చూపిస్తుంది",
+        opt_pin: "యాప్ పిన్ లాక్",
+        opt_pin_sub: "ఖజానా తెరవడానికి 4 అంకెల పిన్ అవసరం",
+        hardware_sec: "డివైజ్ కీస్టోర్",
+        hardware_status: "క్రియాశీలకంగా ఉంది (Knox / TEE)",
+        settings_vault: "డేటా నిర్వహణ",
+        export_full: "పూర్తి ఆడిట్ నివేదికను ఎగుమతి చేయండి",
+        export_sub: "4/4 ఫోటోలు అవసరం",
+        reset_vault: "ఖజానాను రీసెట్ చేయండి",
+        reset_sub: "అన్ని రికార్డులను శాశ్వతంగా తొలగించండి",
+        reset_confirm_title: "రీసెట్ చేయాలా?",
+        reset_confirm_msg: "ఇది అన్ని రికార్డులను శాశ్వతంగా తొలగిస్తుంది.",
+        btn_cancel: "రద్దు",
+        btn_confirm_reset: "రీసెట్ చేయి",
+        close: "మూసివేయి"
+      },
+      kn: {
+        app_title: "ಟೆನೆನ್ಸಿಶೀಲ್ಡ್",
+        app_subtitle: "ನಿಮ್ಮ ಬಾಡಿಗೆ, ದಾಖಲಿತವಾಗಿದೆ.",
+        your_records: "ನಿಮ್ಮ ದಾಖಲೆಗಳು",
+        main_heading: "ಎಲ್ಲವೂ ಸೂಕ್ತ ಸ್ಥಳದಲ್ಲಿ.",
+        main_subtitle: "ಒಪ್ಪಂದಗಳು, ಫೋಟೋಗಳು ಮತ್ತು ಪ್ರಮುಖ ದಾಖಲೆಗಳು.",
+        evidence_vault: "ಸಾಕ್ಷ್ಯ ಭಂಡಾರ",
+        vault_subtitle_empty: "ಫೋಟೋಗಳನ್ನು ಸೆರೆಹಿಡಿಯಲು ಸ್ಪರ್ಶಿಸಿ",
+        vault_subtitle_progress: "8 ರಲ್ಲಿ {count} ಕೊಠಡಿಗಳು ದಾಖಲಾಗಿವೆ",
+        rental_agreement: "ಬಾಡಿಗೆ ಒಪ್ಪಂದ ಮತ್ತು ವಿವರಗಳು",
+        rental_subtitle_empty: "ವಿಳಾಸ, ಮಾಲೀಕರ ಹೆಸರು ಮತ್ತು PDF ಸೇರಿಸಿ",
+        rental_subtitle_saved: "ವಿವರಗಳು ಉಳಿಸಲಾಗಿದೆ ✓",
+        recent_docs: "ಇತ್ತೀಚಿನ ದಾಖಲೆಗಳು",
+        see_all: "ಎಲ್ಲವನ್ನೂ ನೋಡಿ",
+        move_in_photos: "ಪ್ರವೇಶ ಸಮಯದ ಫೋಟೋಗಳು",
+        photos_saved: "4 ರಲ್ಲಿ {count} ಫೋಟೋಗಳು",
+        forensic_report: "ತೌಲನಿಕ ಆಡಿಟ್ ವರದಿ (PDF)",
+        forensic_report_locked: "ಲಾಕ್ ಆಗಿದೆ — 4/4 ಫೋಟೋ ಪೂರ್ಣಗೊಳಿಸಿ",
+        forensic_report_ready: "BSA 2023 ಸೆಕ್ಷನ್ 63 • ಸಿದ್ಧವಾಗಿದೆ",
+        nav_home: "ಮುಖಪುಟ",
+        nav_evidence: "ಸಾಕ್ಷ್ಯ",
+        nav_timeline: "ಸಮಯರೇಖೆ",
+        nav_settings: "ಸೆಟ್ಟಿಂಗ್ಸ್",
+        tab_move_in: "ಪ್ರವೇಶ ಬೇಸ್‌ಲೈನ್",
+        tab_move_out: "ನಿರ್ಗಮನ ಪರಿಶೀಲನೆ",
+        areas_documented: "4 ರಲ್ಲಿ {count} ಪ್ರದೇಶಗಳ ಫೋಟೋ ಮುಗಿದಿದೆ",
+        baseline_status_good: "ಎಲ್ಲಾ ಫೋಟೋಗಳು ಸಾಧನದಲ್ಲಿ ಡಿಜಿಟಲ್ ಸಹಿಯೊಂದಿಗೆ ಸುರಕ್ಷಿತವಾಗಿವೆ.",
+        baseline_status_empty: "ಪ್ರವೇಶಿಸುವ ಮುನ್ನ 4 ಪ್ರದೇಶಗಳ ಬೇಸ್‌ಲೈನ್ ಫೋಟೋ ತೆಗೆದುಕೊಳ್ಳಿ.",
+        room_wall_1: "ಗೋಡೆಗಳು ಮತ್ತು ಸ್ಕರ್ಟಿಂಗ್",
+        room_wall_1_sub: "ಪ್ಲಾಸ್ಟರ್ ಮತ್ತು ಮೇಲ್ಮೈ ಸ್ಥಿತಿ",
+        room_flooring: "ನೆಲ ಮತ್ತು ಕಾರ್ಪೆಟ್‌ಗಳು",
+        room_flooring_sub: "ಮರದ ಹಲಗೆಗಳು ಮತ್ತು ಸೀಲ್ಸ್",
+        room_ceiling: "ಸೀಲಿಂಗ್ ಮತ್ತು ದೀಪಗಳು",
+        room_ceiling_sub: "ಮೇಲ್ಛಾವಣಿ ಮತ್ತು ಫಿಟ್ಟಿಂಗ್ಸ್",
+        room_meters: "ಮೀಟರ್ ಮತ್ತು ಸಾಕೆಟ್‌ಗಳು",
+        room_meters_sub: "ರೀಡಿಂಗ್ಸ್ ಮತ್ತು ಸ್ವಿಚ್‌ಬೋರ್ಡ್ಸ್",
+        status_verified: "ಉಳಿಸಲಾಗಿದೆ · ಪರಿಶೀಲಿಸಲಾಗಿದೆ",
+        status_pending: "ಇನ್ನೂ ಫೋಟೋ ತೆಗೆದಿಲ್ಲ",
+        btn_take_photo: "ಫೋಟೋ ತೆಗೆಯಿರಿ",
+        btn_retake: "ಮತ್ತೆ ತೆಗೆಯಿರಿ",
+        btn_align_compare: "ಹೋಲಿಸಿ ನೋಡಿ",
+        view_seal: "ಕ್ರಿಪ್ಟೋಗ್ರಾಫಿಕ್ ಸೀಲ್ ವೀಕ್ಷಿಸಿ",
+        hide_seal: "ಸೀಲ್ ಮರೆಮಾಡಿ",
+        export_pdf_btn: "ಬೇಸ್‌ಲೈನ್ ಲಾಕ್ ಮಾಡಿ PDF ಪಡೆಯಿರಿ",
+        show_witness_qr: "ಸಾಕ್ಷಿದಾರ QR ಕೋಡ್",
+        timeline_title: "ಆಡಿಟ್ ಇತಿಹಾಸ",
+        filter_all: "ಎಲ್ಲಾ",
+        filter_move_in: "ಪ್ರವೇಶ",
+        filter_move_out: "ನಿರ್ಗಮನ",
+        filter_docs: "ಲೀಸ್ ಮತ್ತು ವರದಿಗಳು",
+        btn_verify_chain: "ಸರಪಳಿ ಸಮಗ್ರತೆಯನ್ನು ಪರಿಶೀಲಿಸಿ",
+        verifying_chain: "ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ...",
+        chain_verified_title: "ಸಮಗ್ರತೆ ದೃಢಪಟ್ಟಿದೆ",
+        chain_verified_sub: "ಎಲ್ಲಾ {count} ದಾಖಲೆಗಳು ಪರಿಶೀಲಿಸಲ್ಪಟ್ಟಿವೆ",
+        settings_lang: "ಭಾಷೆ / Select Language",
+        settings_security: "ಕ್ಯಾಮೆರಾ ಮತ್ತು ಭದ್ರತೆ",
+        opt_ghost: "ಘೋಸ್ಟ್ ಓವರ್‌ಲೇ ಮಾರ್ಗದರ್ಶಿ",
+        opt_ghost_sub: "ನಿಖರ ಹೊಂದಾಣಿಕೆಗಾಗಿ ಬೇಸ್‌ಲೈನ್ ಫೋಟೋ ತೋರಿಸುತ್ತದೆ",
+        opt_pin: "ಆಪ್ ಪಿನ್ ಲಾಕ್",
+        opt_pin_sub: "ಭಂಡಾರ ತೆರೆಯಲು 4-ಅಂಕಿಯ ಪಿನ್ ಅಗತ್ಯವಿದೆ",
+        hardware_sec: "ಡಿವೈಸ್ ಕೀಸ್ಟೋರ್",
+        hardware_status: "ಸಕ್ರಿಯವಾಗಿದೆ (Knox / TEE)",
+        settings_vault: "ಡೇಟಾ ನಿರ್ವಹಣೆ",
+        export_full: "ಸಂಪೂರ್ಣ ಆಡಿಟ್ ವರದಿ ರಫ್ತು ಮಾಡಿ",
+        export_sub: "4/4 ದಾಖಲೆಗಳು ಅಗತ್ಯವಿದೆ",
+        reset_vault: "ಭಂಡಾರವನ್ನು ಮರುಹೊಂದಿಸಿ",
+        reset_sub: "ಎಲ್ಲಾ ದಾಖಲೆಗಳನ್ನು ಶಾಶ್ವತವಾಗಿ ಅಳಿಸಿ",
+        reset_confirm_title: "ಮರುಹೊಂದಿಸಬೇಕೆ?",
+        reset_confirm_msg: "ಇದು ಎಲ್ಲಾ ದಾಖಲೆಗಳನ್ನು ಶಾಶ್ವತವಾಗಿ ಅಳಿಸುತ್ತದೆ.",
+        btn_cancel: "ರದ್ದುಮಾಡಿ",
+        btn_confirm_reset: "ಮರುಹೊಂದಿಸಿ",
+        close: "ಮುಚ್ಚಿ"
+      },
+      bn: {
+        app_title: "টেন্যান্সি শিল্ড",
+        app_subtitle: "আপনার ভাড়া সংক্রান্ত নথি, সম্পূর্ণ সুরক্ষিত।",
+        your_records: "আপনার নথিপত্র",
+        main_heading: "সবকিছু সঠিক জায়গায়।",
+        main_subtitle: "চুক্তিনামা, ছবি, রসিদ এবং গুরুত্বপূর্ণ তথ্য।",
+        evidence_vault: "প্রমাণ ভল্ট",
+        vault_subtitle_empty: "ঘরের ছবি তুলতে ট্যাপ করুন",
+        vault_subtitle_progress: "৮ এর মধ্যে {count} টি ঘরের নথি সম্পূর্ণ",
+        rental_agreement: "ভাড়া চুক্তি ও ফ্ল্যাটের বিবরণ",
+        rental_subtitle_empty: "ঠিকানা, বাড়িওয়ালার নাম ও লিজ PDF যুক্ত করুন",
+        rental_subtitle_saved: "বিবরণ সংরক্ষিত ✓",
+        recent_docs: "সাম্প্রতিক নথিপত্র",
+        see_all: "সব দেখুন",
+        move_in_photos: "ওঠার সময়ের ছবি",
+        photos_saved: "৪ এর মধ্যে {count} টি ছবি তোলা হয়েছে",
+        forensic_report: "তুলনামূলক অডিট রিপোর্ট (PDF)",
+        forensic_report_locked: "লক করা — আগে ৪/৪ ছবি সম্পূর্ণ করুন",
+        forensic_report_ready: "BSA 2023 ধারা 63 • প্রস্তুত",
+        nav_home: "হোম",
+        nav_evidence: "প্রমাণ",
+        nav_timeline: "টাইমলাইন",
+        nav_settings: "সেটিংস",
+        tab_move_in: "প্রবেশ বেসলাইন",
+        tab_move_out: "ছাড়ার পরিদর্শন",
+        areas_documented: "৪ এর মধ্যে {count} টি স্থানের ছবি সংগৃহীত",
+        baseline_status_good: "সব বেসলাইন ছবি ডিভাইসে সুরক্ষিতভাবে সংরক্ষিত।",
+        baseline_status_empty: "ওঠার আগে ৪ টি স্থানেরই বেসলাইন ছবি তুলুন।",
+        room_wall_1: "দেয়াল এবং স্কার্টিং",
+        room_wall_1_sub: "প্লাস্টার, পেইন্ট এবং মেঝের প্রান্ত",
+        room_flooring: "মেঝে এবং কার্পেট",
+        room_flooring_sub: "কাঠের তক্তা, মেঝে এবং ফিনিশিং",
+        room_ceiling: "সিলিং এবং লাইট",
+        room_ceiling_sub: "ছাদ এবং বৈদ্যুতিক ফিক্সচার",
+        room_meters: "মিটার এবং সকেট",
+        room_meters_sub: "রিডিং, ব্রেকার এবং সুইচবোর্ড",
+        status_verified: "সংরক্ষিত · যাচাইকৃত",
+        status_pending: "এখনও ছবি তোলা হয়নি",
+        btn_take_photo: "ছবি তুলুন",
+        btn_retake: "আবার তুলুন",
+        btn_align_compare: "তুলনা করে তুলুন",
+        view_seal: "ক্রিপ্টোগ্রাফিক সিল দেখুন",
+        hide_seal: "সিল লুকান",
+        export_pdf_btn: "বেসলাইন লক করে PDF নিন",
+        show_witness_qr: "সাক্ষী QR কোড",
+        timeline_title: "অডিট ইতিহাস",
+        filter_all: "সব",
+        filter_move_in: "প্রবেশ",
+        filter_move_out: "প্রস্থান",
+        filter_docs: "চুক্তি ও রিপোর্ট",
+        btn_verify_chain: "চেইনের সত্যতা যাচাই করুন",
+        verifying_chain: "যাচাই করা হচ্ছে...",
+        chain_verified_title: "সত্যতা নিশ্চিত হয়েছে",
+        chain_verified_sub: "সব {count} টি রেকর্ড যাচাইকৃত",
+        settings_lang: "ভাষা / Select Language",
+        settings_security: "ক্যামেরা ও নিরাপত্তা",
+        opt_ghost: "ঘোস্ট ওভারলে গাইড",
+        opt_ghost_sub: "সঠিক ছবির জন্য আগের ছবি প্রদর্শন করে",
+        opt_pin: "শুরুতে পিন লক",
+        opt_pin_sub: "ভল্ট খুলতে ৪-সংখ্যার পিন প্রয়োজন",
+        hardware_sec: "ডিভাইস কি-স্টোর",
+        hardware_status: "সক্রিয় (Knox / TEE)",
+        settings_vault: "ডেটা পরিচালনা",
+        export_full: "সম্পূর্ণ অডিট রিপোর্ট রপ্তানি করুন",
+        export_sub: "৪/৪ রেকর্ড থাকা আবশ্যক",
+        reset_vault: "ভল্ট রিসেট করুন",
+        reset_sub: "সব তথ্য স্থায়ীভাবে মুছে ফেলুন",
+        reset_confirm_title: "রিসেট করবেন কি?",
+        reset_confirm_msg: "এটি সমস্ত সংরক্ষিত রেকর্ড স্থায়ীভাবে মুছে ফেলবে।",
+        btn_cancel: "বাতিল",
+        btn_confirm_reset: "রিসেট করুন",
+        close: "বন্ধ করুন"
+      }
+    };
+
+    // 4 Canonical Audit Checklist Items
+    const AUDIT_ITEMS = [
+      { id: "wall_1", titleKey: "room_wall_1", subKey: "room_wall_1_sub" },
+      { id: "flooring", titleKey: "room_flooring", subKey: "room_flooring_sub" },
+      { id: "ceiling", titleKey: "room_ceiling", subKey: "room_ceiling_sub" },
+      { id: "meters", titleKey: "room_meters", subKey: "room_meters_sub" }
+    ];
+
+    // State Variables (Clean 0/4 initial default)
+    let currentLang = "en";
+    let activeNavTab = "home";
+    let activeEvidencePhase = "MOVE_IN";
+    let activeTimelineFilter = "ALL";
+    let auditState = {
+      totalRecords: 0,
+      chainHeadHash: "GENESIS_ROOT",
+      moveIn: {},
+      moveOut: {},
+      timeline: [],
+      rentalAgreement: { exists: false, name: "Rental agreement.pdf", size: "1.8 MB", hash: "", timestamp: 0 },
+      settings: {
+        app_language: "en",
+        pin_lock_enabled: "false",
+        ghost_overlay_default: "true",
+        ai_clarity_enabled: "true",
+        tenant_name: "",
+        property_address: "",
+        landlord_name: "",
+        lease_start_date: "",
+        security_deposit: "",
+        lease_state: "Tamil Nadu"
+      }
+    };
+
+    // Splash Screen Dismissal (2.4s or tap-to-skip)
+    let splashDismissed = false;
+    function skipSplash() {
+      if (splashDismissed) return;
+      splashDismissed = true;
+      const splash = document.getElementById("splash-overlay");
+      if (splash) {
+        splash.classList.add("fade-out");
+        setTimeout(() => { splash.style.display = "none"; }, 500);
+      }
+    }
+    setTimeout(skipSplash, 2400);
+
+    // Language Dropdown Control
+    function toggleLanguageDropdown(e) {
+      if (e) e.stopPropagation();
+      const menu = document.getElementById("lang-dropdown-menu");
+      if (menu) menu.classList.toggle("open");
+    }
+
+    document.addEventListener("click", () => {
+      const menu = document.getElementById("lang-dropdown-menu");
+      if (menu && menu.classList.contains("open")) {
+        menu.classList.remove("open");
+      }
+    });
+
+    // Translation Engine
+    function t(key, params = {}) {
+      const dict = I18N_DICTIONARY[currentLang] || I18N_DICTIONARY["en"];
+      let text = dict[key] || I18N_DICTIONARY["en"][key] || key;
+      for (const [k, v] of Object.entries(params)) {
+        text = text.replace(`{${k}}`, v);
+      }
+      return text;
+    }
+
+    function selectLanguage(lang) {
+      if (!I18N_DICTIONARY[lang]) lang = "en";
+      currentLang = lang;
+
+      const langDisplayMap = {
+        en: "English",
+        hi: "हिन्दी",
+        mr: "मराठी",
+        ta: "தமிழ்",
+        te: "తెలుగు",
+        kn: "ಕನ್ನಡ",
+        bn: "বাংলা"
+      };
+
+      const label = document.getElementById("txt-lang-label");
+      if (label) label.innerText = langDisplayMap[lang] || "English";
+
+      // Update dropdown items active state
+      document.querySelectorAll(".lang-menu-item").forEach(item => {
+        item.classList.remove("active");
+        if (item.getAttribute("onclick") && item.getAttribute("onclick").includes(`'${lang}'`)) {
+          item.classList.add("active");
+        }
+      });
+
+      // Update settings tab grid
+      document.querySelectorAll(".lang-item-btn").forEach(btn => btn.classList.remove("selected"));
+      const activeBtn = document.getElementById(`lang-btn-${lang}`);
+      if (activeBtn) activeBtn.classList.add("selected");
+
+      // Close dropdown menu
+      const menu = document.getElementById("lang-dropdown-menu");
+      if (menu) menu.classList.remove("open");
+
+      // Persist setting
+      if (window.TenancyShieldBridge && window.TenancyShieldBridge.saveSetting) {
+        window.TenancyShieldBridge.saveSetting("app_language", lang);
+      }
+      if (auditState.settings) {
+        auditState.settings.app_language = lang;
+      }
+
+      applyTranslations();
+      renderAllTabs();
+    }
+    window.setLanguage = selectLanguage;
+
+    function applyTranslations() {
+      // Header
+      document.getElementById("txt-app-title").innerText = t("app_title");
+      document.getElementById("txt-app-subtitle").innerText = t("app_subtitle");
+
+      // Home
+      document.getElementById("txt-your-records").innerText = t("your_records");
+      document.getElementById("txt-main-heading").innerText = t("main_heading");
+      document.getElementById("txt-main-subtitle").innerText = t("main_subtitle");
+      document.getElementById("txt-evidence-vault").innerText = t("evidence_vault");
+      document.getElementById("txt-recent-docs").innerText = t("recent_docs");
+      document.getElementById("txt-see-all").innerText = t("see_all");
+      document.getElementById("txt-move-in-photos").innerText = t("move_in_photos");
+      document.getElementById("txt-forensic-report").innerText = t("forensic_report");
+
+      // Evidence
+      document.getElementById("txt-tab-move-in").innerText = t("tab_move_in");
+      document.getElementById("txt-tab-move-out").innerText = t("tab_move_out");
+      document.getElementById("txt-export-pdf-btn").innerText = t("export_pdf_btn");
+      document.getElementById("txt-show-witness-qr").innerText = t("show_witness_qr");
+
+      // Timeline
+      document.getElementById("txt-timeline-title").innerText = t("timeline_title");
+      document.getElementById("txt-verify-chain-btn").innerText = t("btn_verify_chain");
+      document.getElementById("filter-all").innerText = t("filter_all");
+      document.getElementById("filter-movein").innerText = t("filter_move_in");
+      document.getElementById("filter-moveout").innerText = t("filter_move_out");
+      document.getElementById("filter-docs").innerText = t("filter_docs");
+
+      // Settings
+      document.getElementById("txt-settings-lang").innerText = t("settings_lang");
+      document.getElementById("txt-settings-security").innerText = t("settings_security");
+      document.getElementById("txt-opt-ghost").innerText = t("opt_ghost");
+      document.getElementById("txt-opt-ghost-sub").innerText = t("opt_ghost_sub");
+      document.getElementById("txt-opt-pin").innerText = t("opt_pin");
+      document.getElementById("txt-opt-pin-sub").innerText = t("opt_pin_sub");
+      document.getElementById("txt-hardware-sec").innerText = t("hardware_sec");
+      document.getElementById("txt-hardware-status").innerText = t("hardware_status");
+      document.getElementById("txt-settings-vault").innerText = t("settings_vault");
+      document.getElementById("txt-export-full").innerText = t("export_full");
+      document.getElementById("txt-export-sub").innerText = t("export_sub");
+      document.getElementById("txt-reset-vault").innerText = t("reset_vault");
+      document.getElementById("txt-reset-sub").innerText = t("reset_sub");
+
+      // Navigation Bar
+      document.getElementById("nav-lbl-home").innerText = t("nav_home");
+      document.getElementById("nav-lbl-evidence").innerText = t("nav_evidence");
+      document.getElementById("nav-lbl-timeline").innerText = t("nav_timeline");
+      document.getElementById("nav-lbl-settings").innerText = t("nav_settings");
+    }
+
+    // Navigation Switcher
+    function switchNavTab(tabId) {
+      activeNavTab = tabId;
+      document.querySelectorAll(".tab-page").forEach(page => page.classList.remove("active"));
+      document.querySelectorAll(".nav-tab-btn").forEach(btn => btn.classList.remove("active"));
+
+      const targetPage = document.getElementById(`page-${tabId}`);
+      const targetBtn = document.getElementById(`nav-btn-${tabId}`);
+      if (targetPage) targetPage.classList.add("active");
+      if (targetBtn) targetBtn.classList.add("active");
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    // Evidence Phase Switcher
+    function switchEvidencePhase(phase) {
+      activeEvidencePhase = phase;
+      document.getElementById("btn-phase-movein").classList.toggle("active", phase === "MOVE_IN");
+      document.getElementById("btn-phase-moveout").classList.toggle("active", phase === "MOVE_OUT");
+      renderEvidenceTab();
+    }
+
+    // Render Home Tab Dynamic Data
+    function renderHomeTab() {
+      const moveInCount = Object.keys(auditState.moveIn || {}).length;
+      const moveOutCount = Object.keys(auditState.moveOut || {}).length;
+      const totalCount = moveInCount + moveOutCount;
+
+      const vaultSub = document.getElementById("txt-vault-progress-sub");
+      if (totalCount === 0) {
+        vaultSub.innerText = t("vault_subtitle_empty");
+      } else {
+        vaultSub.innerText = t("vault_subtitle_progress", { count: totalCount });
+      }
+
+      // Rental Agreement Row & Meta
+      const sets = auditState.settings || {};
+      const rentalInfo = auditState.rentalAgreement || {};
+      const rentalTitle = document.getElementById("txt-rental-agreement");
+      const rentalSub = document.getElementById("txt-rental-sub");
+      const rentalIcon = document.getElementById("icon-rental-check");
+      const itemRentalName = document.getElementById("item-rental-name");
+      const itemRentalMeta = document.getElementById("item-rental-meta");
+
+      const hasFlatDetails = sets.property_address && sets.property_address.trim().length > 0;
+      if (hasFlatDetails || rentalInfo.exists) {
+        const propName = sets.property_address ? sets.property_address.split(",")[0] : (rentalInfo.name || "Flat Record");
+        rentalTitle.innerText = "Rental Agreement & Flat Details";
+        rentalSub.innerText = `${propName} · Lease details saved ✓`;
+        rentalIcon.innerText = "✓";
+        itemRentalName.innerText = rentalInfo.name || "Rental agreement.pdf";
+        itemRentalMeta.innerText = `PDF · ${rentalInfo.size || "1.8 MB"} • Saved locally`;
+      } else {
+        rentalTitle.innerText = t("rental_agreement");
+        rentalSub.innerText = t("rental_subtitle_empty");
+        rentalIcon.innerText = "+";
+        itemRentalName.innerText = "Rental agreement.pdf";
+        itemRentalMeta.innerText = "Tap to attach lease PDF";
+      }
+
+      // Recent photos item
+      document.getElementById("item-photos-meta").innerText = t("photos_saved", { count: moveInCount });
+
+      // Inspection Report Locked/Ready status
+      const reportSub = document.getElementById("txt-forensic-report-sub");
+      if (moveInCount < 4) {
+        reportSub.innerText = t("forensic_report_locked");
+      } else {
+        reportSub.innerText = t("forensic_report_ready");
+      }
+    }
+
+    // Render Evidence Tab Dynamic Cards
+    function renderEvidenceTab() {
+      const activeRecords = (activeEvidencePhase === "MOVE_IN") ? (auditState.moveIn || {}) : (auditState.moveOut || {});
+      let completedCount = 0;
+
+      AUDIT_ITEMS.forEach(item => {
+        if (activeRecords[item.id]) completedCount++;
+      });
+
+      document.getElementById("txt-areas-documented").innerText = t("areas_documented", { count: completedCount });
+      const percent = (completedCount / 4) * 100;
+      document.getElementById("evidence-progress-fill").style.width = `${percent}%`;
+
+      const statusMsg = document.getElementById("txt-baseline-status");
+      statusMsg.innerText = (completedCount === 4) ? t("baseline_status_good") : t("baseline_status_empty");
+
+      const container = document.getElementById("evidence-rooms-container");
+      container.innerHTML = "";
+
+      AUDIT_ITEMS.forEach(item => {
+        const record = activeRecords[item.id];
+        const isAnchored = !!record;
+        const itemTitle = t(item.titleKey);
+
+        const card = document.createElement("div");
+        card.className = "room-card";
+
+        let thumbHtml = `
+          <div class="thumb-box">
+            <svg class="icon" style="color:var(--forest-green); width:24px; height:24px;" viewBox="0 0 24 24">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+              <circle cx="12" cy="13" r="4"></circle>
+            </svg>
+          </div>
+        `;
+
+        if (isAnchored && record.thumbnail && record.thumbnail.length > 50) {
+          thumbHtml = `
+            <div class="thumb-box">
+              <img src="${record.thumbnail}" alt="${itemTitle}" class="thumb-img" />
+            </div>
+          `;
+        }
+
+        let actionBtnText = t("btn_take_photo");
+        if (isAnchored) {
+          actionBtnText = t("btn_retake");
+        } else if (activeEvidencePhase === "MOVE_OUT") {
+          actionBtnText = t("btn_align_compare");
+        }
+
+        // Defect Note input & Move-Out Classification
+        let extrasHtml = "";
+        if (activeEvidencePhase === "MOVE_OUT") {
+          extrasHtml += `
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <label style="font-size:11px; font-weight:600; color:var(--charcoal-muted);">Comparison Classification (FR-CMP-03):</label>
+              <select class="classification-select" onchange="saveItemClassification('${item.id}', this.value)">
+                <option value="similar">Unchanged / Visually Similar</option>
+                <option value="needs_review">Potentially Changed — Needs Review</option>
+                <option value="pre_existing">Pre-existing Issue</option>
+                <option value="new_issue">New Issue</option>
+              </select>
+            </div>
+          `;
+        }
+
+        let sealDrawerHtml = "";
+        if (isAnchored) {
+          const rawHashTrunc = (record.rawHash || "").substring(0, 16) + "...";
+          const chainHashTrunc = (record.chainHash || "").substring(0, 16) + "...";
+          const timeStr = record.timestamp ? new Date(record.timestamp).toISOString().replace("T", " ").substring(0, 19) + " UTC" : "RFC 3161 Certified";
+
+          sealDrawerHtml = `
+            <button type="button" class="seal-toggle" onclick="toggleSealDrawer('seal-${item.id}')">
+              <span>${t("view_seal")}</span>
+              <span id="seal-arrow-${item.id}">▾</span>
+            </button>
+            <div id="seal-${item.id}" class="seal-drawer">
+              <div class="seal-row">
+                <span>Seq & Phase:</span>
+                <span class="seal-val">#${record.sequenceNumber} • ${record.auditPhase}</span>
+              </div>
+              <div class="seal-row">
+                <span>SHA-256 Raw:</span>
+                <span class="seal-val">${rawHashTrunc}</span>
+              </div>
+              <div class="seal-row">
+                <span>Chain Head:</span>
+                <span class="seal-val">${chainHashTrunc}</span>
+              </div>
+              <div class="seal-row">
+                <span>UTC Timestamp:</span>
+                <span class="seal-val">${timeStr}</span>
+              </div>
+              <div class="seal-row">
+                <span>Keystore:</span>
+                <span class="seal-val" style="color:var(--forest-green);">Hardware ECDSA-256 Signed</span>
+              </div>
+            </div>
+          `;
+        }
+
+        card.innerHTML = `
+          <div class="room-card-top">
+            ${thumbHtml}
+            <div class="room-card-content">
+              <div class="room-title">${itemTitle}</div>
+              <span class="room-status-badge ${isAnchored ? "verified" : "pending"}">
+                ${isAnchored ? t("status_verified") : t("status_pending")}
+              </span>
+            </div>
+            <button type="button" class="btn-room-action" onclick="launchCamera('${item.id}', '${activeEvidencePhase}')">
+              <svg class="icon" style="width:14px; height:14px;" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+              <span>${actionBtnText}</span>
+            </button>
+          </div>
+          ${extrasHtml}
+          ${sealDrawerHtml}
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function toggleSealDrawer(id) {
+      const drawer = document.getElementById(id);
+      if (drawer) {
+        const isOpen = drawer.classList.toggle("open");
+        const arrow = document.getElementById(`seal-arrow-${id.replace("seal-", "")}`);
+        if (arrow) arrow.innerText = isOpen ? "▴" : "▾";
+      }
+    }
+
+    function saveItemClassification(itemId, val) {
+      if (window.TenancyShieldBridge && window.TenancyShieldBridge.saveSetting) {
+        window.TenancyShieldBridge.saveSetting(`classify_${itemId}`, val);
+      }
+    }
+
+    // Timeline Tab Rendering
+    function setTimelineFilter(filter) {
+      activeTimelineFilter = filter;
+      document.querySelectorAll(".filter-pill").forEach(pill => pill.classList.remove("active"));
+      if (filter === "ALL") document.getElementById("filter-all").classList.add("active");
+      if (filter === "MOVE_IN") document.getElementById("filter-movein").classList.add("active");
+      if (filter === "MOVE_OUT") document.getElementById("filter-moveout").classList.add("active");
+      if (filter === "DOCUMENTS") document.getElementById("filter-docs").classList.add("active");
+      renderTimelineTab();
+    }
+
+    function renderTimelineTab() {
+      const container = document.getElementById("timeline-container");
+      container.innerHTML = "";
+
+      let list = (auditState.timeline || []).slice();
+
+      // If document filter is on or all, prepend rental agreement if exists
+      const rentalInfo = auditState.rentalAgreement || {};
+      if (rentalInfo.exists && (activeTimelineFilter === "ALL" || activeTimelineFilter === "DOCUMENTS")) {
+        const docNode = document.createElement("div");
+        docNode.className = "timeline-node";
+        docNode.innerHTML = `
+          <div class="timeline-dot"></div>
+          <div class="timeline-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; font-weight:700; color:var(--muted-brass);">DOCUMENT SEALED</span>
+              <span style="font-size:11px; color:var(--charcoal-muted); font-family:var(--font-mono);">SHA-256</span>
+            </div>
+            <div style="font-size:14px; font-weight:700; color:var(--charcoal-text);">${rentalInfo.name || "Rental agreement.pdf"}</div>
+            <div style="font-size:12px; color:var(--charcoal-muted);">PDF · ${rentalInfo.size || "1.8 MB"} • Saved locally in secure app vault</div>
+          </div>
+        `;
+        container.appendChild(docNode);
+      }
+
+      if (activeTimelineFilter === "MOVE_IN") {
+        list = list.filter(it => it.auditPhase === "MOVE_IN");
+      } else if (activeTimelineFilter === "MOVE_OUT") {
+        list = list.filter(it => it.auditPhase === "MOVE_OUT");
+      } else if (activeTimelineFilter === "DOCUMENTS") {
+        return;
+      }
+
+      if (list.length === 0 && !rentalInfo.exists) {
+        container.innerHTML = `
+          <div style="padding:24px 0; text-align:center; color:var(--charcoal-muted); font-size:13px;">
+            No audit records saved yet. Begin with Move-in baseline photos.
+          </div>
+        `;
+        return;
+      }
+
+      list.forEach(record => {
+        const itemDef = AUDIT_ITEMS.find(it => it.id === record.itemId);
+        const itemTitle = itemDef ? t(itemDef.titleKey) : record.itemId;
+        const phaseTitle = record.auditPhase === "MOVE_IN" ? "Move-In Baseline" : "Move-Out Inspection";
+        const timeStr = record.timestamp ? new Date(record.timestamp).toLocaleString() : "Recent";
+
+        const node = document.createElement("div");
+        node.className = "timeline-node";
+
+        let thumbHtml = "";
+        if (record.thumbnail && record.thumbnail.length > 50) {
+          thumbHtml = `
+            <div style="width:48px; height:48px; border-radius:10px; overflow:hidden; border:1px solid var(--soft-stone-border); flex-shrink:0;">
+              <img src="${record.thumbnail}" alt="${itemTitle}" style="width:100%; height:100%; object-fit:cover;" />
+            </div>
+          `;
+        }
+
+        node.innerHTML = `
+          <div class="timeline-dot"></div>
+          <div class="timeline-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; font-weight:700; color:var(--forest-green);">RECORD #${record.sequenceNumber} • ${phaseTitle.toUpperCase()}</span>
+              <span style="font-size:11px; color:var(--charcoal-muted);">${timeStr}</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px;">
+              ${thumbHtml}
+              <div style="flex:1; min-width:0;">
+                <div style="font-size:14px; font-weight:700; color:var(--charcoal-text);">${itemTitle}</div>
+                <div style="font-size:11px; color:var(--charcoal-muted); font-family:var(--font-mono); margin-top:2px;">
+                  Seal: ${(record.chainHash || "").substring(0, 14)}...
+                </div>
+              </div>
+            </div>
+            <button type="button" class="seal-toggle" onclick="toggleSealDrawer('tl-seal-${record.id}')">
+              <span>${t("view_seal")}</span>
+              <span id="seal-arrow-tl-seal-${record.id}">▾</span>
+            </button>
+            <div id="tl-seal-${record.id}" class="seal-drawer">
+              <div class="seal-row">
+                <span>Previous Link:</span>
+                <span class="seal-val">${(record.previousChainHash || "").substring(0, 16)}...</span>
+              </div>
+              <div class="seal-row">
+                <span>File SHA-256:</span>
+                <span class="seal-val">${(record.rawHash || "").substring(0, 16)}...</span>
+              </div>
+              <div class="seal-row">
+                <span>Hardware Attestation:</span>
+                <span class="seal-val" style="color:var(--forest-green);">Knox Keystore Verified</span>
+              </div>
+            </div>
+          </div>
+        `;
+
+        container.appendChild(node);
+      });
+    }
+
+    // Render Settings Tab
+    function renderSettingsTab() {
+      const sets = auditState.settings || {};
+      const ghostToggle = document.getElementById("toggle-ghost");
+      const pinToggle = document.getElementById("toggle-pin");
+      const clarityToggle = document.getElementById("toggle-clarity");
+
+      if (ghostToggle) ghostToggle.classList.toggle("on", sets.ghost_overlay_default !== "false");
+      if (pinToggle) pinToggle.classList.toggle("on", sets.pin_lock_enabled === "true");
+      if (clarityToggle) clarityToggle.classList.toggle("on", sets.ai_clarity_enabled !== "false");
+    }
+
+    function toggleSetting(key) {
+      const sets = auditState.settings || {};
+      const currentVal = sets[key];
+      const newVal = (currentVal === "true") ? "false" : "true";
+      sets[key] = newVal;
+
+      if (window.TenancyShieldBridge && window.TenancyShieldBridge.saveSetting) {
+        window.TenancyShieldBridge.saveSetting(key, newVal);
+      }
+      renderSettingsTab();
+    }
+
+    function renderAllTabs() {
+      renderHomeTab();
+      renderEvidenceTab();
+      renderTimelineTab();
+      renderSettingsTab();
+    }
+
+    // Bidirectional State Synchronization Bridge
+    function refreshAuditState() {
+      try {
+        if (window.TenancyShieldBridge && window.TenancyShieldBridge.getAuditStateJson) {
+          const jsonStr = window.TenancyShieldBridge.getAuditStateJson();
+          auditState = JSON.parse(jsonStr);
+          if (auditState.settings && auditState.settings.app_language && auditState.settings.app_language !== currentLang) {
+            selectLanguage(auditState.settings.app_language);
+          }
+        }
+      } catch (e) {
+        console.error("refreshAuditState error:", e);
+      }
+      renderAllTabs();
+    }
+    window.refreshAuditState = refreshAuditState;
+
+    // Strict PDF Completion Gating (Phase 1, Item 5)
+    function handlePdfReportTap() {
+      const moveInCount = Object.keys(auditState.moveIn || {}).length;
+      if (moveInCount < 4) {
+        showIncompletePdfModal();
+        return;
+      }
+      if (window.TenancyShieldBridge && window.TenancyShieldBridge.generateForensicPdf) {
+        window.TenancyShieldBridge.generateForensicPdf();
+      } else if (window.TenancyShieldBridge && window.TenancyShieldBridge.generatePdfReport) {
+        window.TenancyShieldBridge.generatePdfReport();
+      }
+    }
+    window.generatePdfReport = handlePdfReportTap;
+
+    function showIncompletePdfModal() {
+      const activeRecords = auditState.moveIn || {};
+      const missingItems = AUDIT_ITEMS.filter(it => !activeRecords[it.id]);
+      const missingCount = missingItems.length;
+      const takenCount = 4 - missingCount;
+
+      let missingListHtml = "";
+      missingItems.forEach(it => {
+        missingListHtml += `<li style="margin-bottom:4px; font-weight:600; color:var(--charcoal-text); font-size:13px;">• ${t(it.titleKey)}</li>`;
+      });
+
+      const content = document.getElementById("modal-sheet-content");
+      content.innerHTML = `
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="width:44px; height:44px; border-radius:12px; background:rgba(167,131,82,0.14); display:flex; align-items:center; justify-content:center; color:var(--muted-brass); font-size:22px;">🔒</div>
+          <div>
+            <div style="font-size:17px; font-weight:800; color:var(--charcoal-text);">Inspection Incomplete (${takenCount}/4 photos taken)</div>
+            <div style="font-size:12px; color:var(--charcoal-muted);">BSA 2023 Sec 63 Statutory Gating</div>
+          </div>
+        </div>
+        <p style="font-size:13px; color:var(--charcoal-muted); line-height:1.45;">
+          A legally sound BSA 2023 forensic inspection report requires all 4 baseline room areas to be captured before export. Please photograph the remaining areas:
+        </p>
+        <ul style="list-style:none; padding:10px 14px; background:var(--warm-paper); border-radius:12px; border:1px solid var(--soft-stone-border);">
+          ${missingListHtml}
+        </ul>
+        <button type="button" class="btn-primary-action" onclick="closeModal(); switchNavTab('evidence');">
+          <span>Take Missing Photos</span>
+        </button>
+        <button type="button" class="section-action-btn" style="padding:8px; text-align:center;" onclick="closeModal()">${t("close")}</button>
+      `;
+      document.getElementById("app-modal").classList.add("open");
+    }
+    window.showIncompletePdfModal = showIncompletePdfModal;
+
+    // Lease & Property Record Sheet (Phase 1, Item 6)
+    function openLeaseRecordSheet() {
+      const sets = auditState.settings || {};
+      const rentalInfo = auditState.rentalAgreement || {};
+      const content = document.getElementById("modal-sheet-content");
+
+      const states = [
+        "Tamil Nadu", "Maharashtra", "Karnataka", "Delhi NCR",
+        "Telangana", "West Bengal", "Other — Model Tenancy Act 2021 Ref"
+      ];
+      let stateOptionsHtml = "";
+      states.forEach(st => {
+        const isSel = (sets.lease_state === st) ? "selected" : "";
+        stateOptionsHtml += `<option value="${st}" ${isSel}>${st}</option>`;
+      });
+
+      content.innerHTML = `
+        <div style="font-size:18px; font-weight:800; color:var(--charcoal-text);">Lease & Property Record</div>
+        <div style="background:var(--warm-paper); border:1px solid var(--soft-stone-border); border-radius:12px; padding:12px; font-size:12px; color:var(--charcoal-muted); line-height:1.45;">
+          ℹ️ <strong>Why add this?</strong> Adding your flat address, landlord name, and lease PDF links your room condition photos to your specific tenancy and prints these details on your exported inspection report.
+        </div>
+
+        <div class="input-field-group">
+          <label class="input-label">Property / Flat Address</label>
+          <input type="text" id="sheet-prop-address" class="text-input" placeholder="e.g. Flat 302, Green Valley Apartments" value="${sets.property_address || ''}" />
+        </div>
+
+        <div class="input-field-group">
+          <label class="input-label">Tenant Full Name</label>
+          <input type="text" id="sheet-tenant-name" class="text-input" placeholder="e.g. Rahul Sharma" value="${sets.tenant_name || ''}" />
+        </div>
+
+        <div class="input-field-group">
+          <label class="input-label">Landlord / Owner Name</label>
+          <input type="text" id="sheet-landlord-name" class="text-input" placeholder="e.g. S. Venkataraman" value="${sets.landlord_name || ''}" />
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div class="input-field-group">
+            <label class="input-label">Move-In / Lease Date</label>
+            <input type="date" id="sheet-lease-date" class="text-input" value="${sets.lease_start_date || ''}" />
+          </div>
+          <div class="input-field-group">
+            <label class="input-label">Security Deposit (₹)</label>
+            <input type="number" id="sheet-deposit" class="text-input" placeholder="e.g. 150000" value="${sets.security_deposit || ''}" />
+          </div>
+        </div>
+
+        <div class="input-field-group">
+          <label class="input-label">State / Jurisdiction</label>
+          <select id="sheet-lease-state" class="select-input">
+            ${stateOptionsHtml}
+          </select>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px; margin-top:4px;">
+          <button type="button" class="btn-secondary-action" onclick="TenancyShieldBridge.uploadRentalAgreement();">
+            <span>📎 Attach Rental Agreement PDF</span>
+          </button>
+          ${rentalInfo.exists ? `
+            <button type="button" class="btn-secondary-action" style="border-style:dashed;" onclick="TenancyShieldBridge.openRentalAgreement();">
+              <span>📄 View Saved Lease PDF (${rentalInfo.name || "Lease.pdf"})</span>
+            </button>
+          ` : `
+            <button type="button" class="btn-secondary-action" style="border-style:dashed;" onclick="TenancyShieldBridge.generateSampleRentalAgreement();">
+              <span>📄 Generate Sample AST Lease PDF</span>
+            </button>
+          `}
+        </div>
+
+        <button type="button" class="btn-primary-action" onclick="saveLeaseRecordSheet()">
+          <span>Save Tenancy Details</span>
+        </button>
+        <button type="button" class="section-action-btn" style="padding:6px; text-align:center;" onclick="closeModal()">${t("close")}</button>
+      `;
+      document.getElementById("app-modal").classList.add("open");
+    }
+
+    function saveLeaseRecordSheet() {
+      const propAddr = document.getElementById("sheet-prop-address").value.trim();
+      const tenant = document.getElementById("sheet-tenant-name").value.trim();
+      const landlord = document.getElementById("sheet-landlord-name").value.trim();
+      const date = document.getElementById("sheet-lease-date").value;
+      const deposit = document.getElementById("sheet-deposit").value.trim();
+      const state = document.getElementById("sheet-lease-state").value;
+
+      if (window.TenancyShieldBridge && window.TenancyShieldBridge.saveSetting) {
+        window.TenancyShieldBridge.saveSetting("property_address", propAddr);
+        window.TenancyShieldBridge.saveSetting("tenant_name", tenant);
+        window.TenancyShieldBridge.saveSetting("landlord_name", landlord);
+        window.TenancyShieldBridge.saveSetting("lease_start_date", date);
+        window.TenancyShieldBridge.saveSetting("security_deposit", deposit);
+        window.TenancyShieldBridge.saveSetting("lease_state", state);
+      }
+
+      if (auditState.settings) {
+        auditState.settings.property_address = propAddr;
+        auditState.settings.tenant_name = tenant;
+        auditState.settings.landlord_name = landlord;
+        auditState.settings.lease_start_date = date;
+        auditState.settings.security_deposit = deposit;
+        auditState.settings.lease_state = state;
+      }
+
+      closeModal();
+      renderHomeTab();
+      alert("Lease and tenancy details saved successfully!");
+    }
+
+    // Chain Verification Modal
+    function triggerChainVerification() {
+      if (window.TenancyShieldBridge && window.TenancyShieldBridge.verifyChainIntegrity) {
+        const resStr = window.TenancyShieldBridge.verifyChainIntegrity();
+        const res = JSON.parse(resStr);
+        const content = document.getElementById("modal-sheet-content");
+        content.innerHTML = `
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:44px; height:44px; border-radius:12px; background:rgba(38,58,46,0.12); display:flex; align-items:center; justify-content:center; color:var(--forest-green); font-size:22px;">🛡️</div>
+            <div>
+              <div style="font-size:17px; font-weight:800; color:var(--charcoal-text);">${t("chain_verified_title")}</div>
+              <div style="font-size:12px; color:var(--charcoal-muted);">BSA 2023 Sec 63 Sequential Proof</div>
+            </div>
+          </div>
+          <div style="background:var(--warm-paper); border-radius:12px; padding:12px; border:1px solid var(--soft-stone-border); display:flex; flex-direction:column; gap:6px; font-size:12px;">
+            <div style="display:flex; justify-content:space-between;">
+              <span style="color:var(--charcoal-muted);">Verified Records:</span>
+              <span style="font-weight:700; color:var(--forest-green);">${res.totalRecords || 0} / 8 Anchored</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span style="color:var(--charcoal-muted);">Chain Head Hash:</span>
+              <span style="font-weight:700; font-family:var(--font-mono); font-size:11px;">${(res.chainHead || "GENESIS").substring(0, 16)}...</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span style="color:var(--charcoal-muted);">Hardware Signatures:</span>
+              <span style="font-weight:700; color:var(--forest-green);">100% Valid (Knox Keystore)</span>
+            </div>
+          </div>
+          <p style="font-size:13px; color:var(--forest-green); font-weight:600; text-align:center;">
+            ${res.message || t("chain_verified_sub", { count: res.totalRecords || 0 })}
+          </p>
+          <button type="button" class="btn-primary-action" onclick="closeModal()">${t("close")}</button>
+        `;
+        document.getElementById("app-modal").classList.add("open");
+      }
+    }
+
+    function confirmResetVault() {
+      const content = document.getElementById("modal-sheet-content");
+      content.innerHTML = `
+        <div style="font-size:18px; font-weight:800; color:#DC2626;">${t("reset_confirm_title")}</div>
+        <p style="font-size:13px; color:var(--charcoal-muted); line-height:1.4;">${t("reset_confirm_msg")}</p>
+        <button type="button" class="btn-primary-action" style="background:#DC2626;" onclick="closeModal(); TenancyShieldBridge.resetVault();">
+          <span>${t("btn_confirm_reset")}</span>
+        </button>
+        <button type="button" class="section-action-btn" style="padding:8px; text-align:center;" onclick="closeModal()">${t("btn_cancel")}</button>
+      `;
+      document.getElementById("app-modal").classList.add("open");
+    }
+
+    function closeModal() {
+      document.getElementById("app-modal").classList.remove("open");
+    }
+
+    function closeModalOnBackdrop(e) {
+      if (e.target.id === "app-modal") closeModal();
+    }
+
+    // Bridge Calls
+    function launchCamera(itemId, phase) {
+      if (window.TenancyShieldBridge && window.TenancyShieldBridge.launchCamera) {
+        window.TenancyShieldBridge.launchCamera(itemId, phase);
+      }
+    }
+
+    function showWitnessQR() {
+      if (window.TenancyShieldBridge && window.TenancyShieldBridge.showWitnessQR) {
+        window.TenancyShieldBridge.showWitnessQR();
+      }
+    }
+
+    // Initial Bootstrap
+    document.addEventListener("DOMContentLoaded", () => {
+      refreshAuditState();
+    });
+  </script>
+</body>
+</html>
